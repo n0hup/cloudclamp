@@ -1,12 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Company>LambdaInsight</Company>
     <OutputType>Exe</OutputType>
+    <AssemblyName>CloudClamp</AssemblyName>
+    <PackageId>CloudClamp</PackageId>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Program.fs" />
+    <Compile Include="AwsS3Bucket.fs" />
+    <Compile Include="Main.fs" />
   </ItemGroup>
 
  <ItemGroup>
