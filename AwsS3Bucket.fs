@@ -10,8 +10,8 @@ module AwsS3Bucket =
 
   let awsRegionToString (region:AwsRegion):string =
     match region with
-    | EuCentral1 -> "eu-central-1"
-    | EuWest1 -> "eu-west-1"
+    | EuCentral1  -> "eu-central-1"
+    | EuWest1     -> "eu-west-1"
 
   type PrivateAcl = 
     PrivateAcl
@@ -33,31 +33,31 @@ module AwsS3Bucket =
   }
 
   type RedirectOnlyConfig = {
-    Bucket : string;
-    Acl: PublicReadAcl;
-    Region : AwsRegion;
+    Bucket  : string;
+    Acl     : PublicReadAcl;
+    Region  : AwsRegion;
     Website : RedirectOnly;
-    Tags : Tags ;
+    Tags    : Tags ;
   }
 
   type WebsiteConfig = {
-    Bucket : string;
-    Acl  : PublicReadAcl;
-    Region : AwsRegion;
+    Bucket  : string;
+    Acl     : PublicReadAcl;
+    Region  : AwsRegion;
     Website : WebsiteDocuments;
-    Tags : Tags ;
+    Tags    : Tags ;
   }
 
   type PrivateBucketConfig = {
-    Bucket : string;
-    Acl : PrivateAcl;
-    Region : AwsRegion;
-    Tags : Tags ;
+    Bucket  : string;
+    Acl     : PrivateAcl;
+    Region  : AwsRegion;
+    Tags    : Tags ;
   }
 
   type AwsS3Bucket =
-    | Website of config : WebsiteConfig
-    | Private of config : PrivateBucketConfig
-    | Redirect of config : RedirectOnlyConfig
+    | Website of config   : WebsiteConfig
+    | Private of config   : PrivateBucketConfig
+    | Redirect of config  : RedirectOnlyConfig
 
 

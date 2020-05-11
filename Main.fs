@@ -22,7 +22,7 @@ module Main =
     { IndexDocument = "index.html"; ErrorDocument = "error.html"; }
 
   let wwwl1xbeBucketConfig : WebsiteConfig  = { 
-    Bucket = "l1x.be"; 
+    Bucket = "www.l1x.be"; 
     Acl = PublicReadAcl; 
     Region = AwsRegion.EuWest1;
     Website = websiteDocuments;
@@ -32,14 +32,14 @@ module Main =
   let wwwl1xbeBucket = AwsS3Bucket.Website(config = wwwl1xbeBucketConfig)
 
   let devl1xbeBucketConfig : WebsiteConfig  = { 
-    Bucket = "l1x.be"; 
+    Bucket = "dev.l1x.be"; 
     Acl = PublicReadAcl; 
     Region = AwsRegion.EuWest1;
     Website = websiteDocuments;
     Tags = websiteTags  
   }
 
-  let devl1xbeBucket = AwsS3Bucket.Website(config = wwwl1xbeBucketConfig)
+  let devl1xbeBucket = AwsS3Bucket.Website(config = devl1xbeBucketConfig)
 
   [<EntryPoint>]
   let main argv =
