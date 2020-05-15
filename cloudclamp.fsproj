@@ -9,12 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Config.fs"      />
     <Compile Include="AwsS3Bucket.fs" />
-    <Compile Include="Main.fs" />
+    <Compile Include="Main.fs"        />
+    <None Include="config.*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
  <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="3.3.110.67" />
+    <PackageReference Include="AWSSDK.S3"   Version="3.3.110.67" />
+    <PackageReference Include="FSharp.Data" Version="3.3.3"      />
   </ItemGroup>
 
 </Project>  

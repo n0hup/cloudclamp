@@ -1,50 +1,113 @@
 ﻿namespace CloudClamp
 
+// external
+open Amazon
+open Amazon.S3
+open Amazon.S3.Model
+open Amazon.Runtime.CredentialManagement
+open System
+
+// internal
 open AwsS3Bucket
+open Config
+
 
 module Main =
 
-  let websiteTags : Tags = 
-    Some [  ("Name", "l1x.be"); ("Environment", "website"); 
-            ("Scope", "global"); ("Stage", "prod")          ]
+  let getAwsProfileCredentials profileName  =
+    try
+      let sharedFile = SharedCredentialsFile();
+      let success1, basicProfile = sharedFile.TryGetProfile(profileName)
+      let success2, awsCredentials = AWSCredentialsFactory.TryGetAWSCredentials(basicProfile, sharedFile)
+      if success1 && success2 then
+        Console.WriteLine(
+          "CredentialDescription : {0}  credentials: {1}",
+          basicProfile.CredentialDescription,
+          awsCredentials.GetCredentials
+        )
+        Some(awsCredentials)
+      else
+        None
+    with ex ->
+      Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message)
+      None
 
-  let l1xbeBucketConfig : RedirectOnlyConfig  = { 
-    Bucket = "l1x.be"; 
-    Acl = PublicReadAcl; 
-    Region = AwsRegion.EuWest1;
-    Website = { RedirectTo = "www.l1x.be" };
-    Tags = websiteTags ;
-  }
+  let createAwsS3Config awsRegionName =
+    let region = RegionEndpoint.GetBySystemName(awsRegionName)
+    let config = AmazonS3Config()
+    config.MaxConnectionsPerServer <- new Nullable<int>(64)
+    config.RegionEndpoint <- region
+    config
 
-  let l1xbeBucket = AwsS3Bucket.Redirect(config = l1xbeBucketConfig)
+  let getAwsS3Client awsCredentials (awsS3Config:AmazonS3Config) =
+    try
+      Console.WriteLine("Connecting to S3...")
+      Console.WriteLine(
+        "AWS S3 Config: RegionEndpoint :: {0} MaxConnectionsPerServer :: {1} BufferSize :: {2} ServiceVersion :: {3}",
+        awsS3Config.RegionEndpoint,
+        awsS3Config.MaxConnectionsPerServer,
+        awsS3Config.BufferSize,
+        awsS3Config.ServiceVersion
+      )
+      Some(new AmazonS3Client(awsCredentials, awsS3Config))
+    with ex ->
+      Console.Error.WriteLine("Connecting to S3 has failed")
+      Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message)
+      None
 
-  let websiteDocuments : WebsiteDocuments = 
-    { IndexDocument = "index.html"; ErrorDocument = "error.html"; }
+  //  We need to figure out how to structure this
+  let createS3Buckets (amazonS3client:AmazonS3Client) =
 
-  let wwwl1xbeBucketConfig : WebsiteConfig  = { 
-    Bucket = "www.l1x.be"; 
-    Acl = PublicReadAcl; 
-    Region = AwsRegion.EuWest1;
-    Website = websiteDocuments;
-    Tags = websiteTags  
-  }
+    let websiteTags : Tags = 
+      Some [  ("Name", "l1x.be"); ("Environment", "website"); 
+              ("Scope", "global"); ("Stage", "prod")          ]
 
-  let wwwl1xbeBucket = AwsS3Bucket.Website(config = wwwl1xbeBucketConfig)
+    // redirect l1x.be -> dev.l1x.be
+    let l1xbeBucketConfig = 
+      createRedirectOnlyBucketConfig "l1x.be" EuWest1 { RedirectTo = "dev.l1x.be" } websiteTags 
 
-  let devl1xbeBucketConfig : WebsiteConfig  = { 
-    Bucket = "dev.l1x.be"; 
-    Acl = PublicReadAcl; 
-    Region = AwsRegion.EuWest1;
-    Website = websiteDocuments;
-    Tags = websiteTags  
-  }
+    let l1xbeBucket = 
+      createRedirectOnlyBucket l1xbeBucketConfig
 
-  let devl1xbeBucket = AwsS3Bucket.Website(config = devl1xbeBucketConfig)
+    // dev.l1x.be
+    let websiteDocuments : WebsiteDocuments = 
+      { IndexDocument = "index.html"; ErrorDocument = "error.html"; }
+
+    let devl1xbeBucketConfig = 
+      createWebsiteBucketConfig "dev.l1x.be" EuWest1 websiteDocuments websiteTags
+
+    let devl1xbeBucket = 
+      createWebsiteBucket devl1xbeBucketConfig
+
+
+
+    // let miez = PutBucketRequest(BucketName = l1xbeBucket)
+    // amazonS3client.PutBucketAsync
+    // Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message)
+    ()
+
+  
+
 
   [<EntryPoint>]
   let main argv =
-      printfn "Hello World from F#!"
-      0 // return an integer exit code
+    let awsProfileCredentials = getAwsProfileCredentials config.AwsProfileName
+    if awsProfileCredentials.IsSome then
+      Console.WriteLine("AWS Credentials are [OK]")
+    else
+      Console.WriteLine("AWS Credentials could not be created [ERR]")
+      Environment.Exit(1)
+
+    let awsS3Config = createAwsS3Config config.AwsRegion
+    let awsS3Client = getAwsS3Client awsProfileCredentials.Value awsS3Config
+
+    if awsS3Client.IsSome then
+      createS3Buckets awsS3Client.Value
+    else
+      ()
+    
+    //return
+    0
 
   // REDIRECT ONLY
 

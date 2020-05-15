@@ -1,9 +1,11 @@
 namespace CloudClamp
 
-// Let the type system do its job
-
 module AwsS3Bucket =
 
+  open Amazon.S3
+
+  // We only allow these
+  
   type AwsRegion = 
    | EuCentral1
    | EuWest1
@@ -60,4 +62,42 @@ module AwsS3Bucket =
     | Private of config   : PrivateBucketConfig
     | Redirect of config  : RedirectOnlyConfig
 
+  // RedirectOnly
+
+  let createRedirectOnlyBucketConfig (bucketName) (region) (websiteToRedirectTo) (tags):RedirectOnlyConfig  =
+    { 
+      Bucket = bucketName; 
+      Acl = PublicReadAcl; 
+      Region = region;
+      Website = websiteToRedirectTo;
+      Tags = tags ;
+    }
+
+  let createRedirectOnlyBucket(config:RedirectOnlyConfig):AwsS3Bucket =
+    Redirect(config = config)
+
+  // Website
+
+  let createWebsiteBucketConfig (bucketName) (region) (websiteDocuments:WebsiteDocuments) (tags):WebsiteConfig  =
+    { 
+      Bucket = bucketName; 
+      Acl = PublicReadAcl; 
+      Region = region;
+      Website = websiteDocuments;
+      Tags = tags ;
+    }
+  
+  let createWebsiteBucket(config:WebsiteConfig):AwsS3Bucket =
+    Website(config = config)
+
+  // Creating the bucket
+
+  let createAwsS3Bucket (amazonS3client:AmazonS3Client) (bucket) (region) =
+    ()
+
+  let createS3bucket (amazonS3client:AmazonS3Client) (bucket:AwsS3Bucket) =
+    match bucket with 
+      | Website config -> createAwsS3Bucket amazonS3client config.Bucket config.Region
+      | Redirect config -> createAwsS3Bucket amazonS3client config.Bucket config.Region
+      | Private config -> createAwsS3Bucket amazonS3client config.Bucket config.Region
 
