@@ -1,5 +1,6 @@
 namespace CloudClamp
 open Amazon.S3.Model
+open System.Collections.Generic
 
 module AwsS3Bucket =
 
@@ -74,6 +75,10 @@ module AwsS3Bucket =
     | Private of config   : PrivateBucketConfig
     | Redirect of config  : RedirectOnlyConfig
 
+  type CreateS3bucketResponse = {
+    PutBucketResponseResult : Option<PutBucketResponse>
+  }
+
   // RedirectOnly
 
   let createRedirectOnlyBucketConfig (bucketName) (region) (websiteToRedirectTo) (tags):RedirectOnlyConfig  =
@@ -112,17 +117,31 @@ module AwsS3Bucket =
         BucketRegion = allowedAwsRegionsToS3region(region),
         CannedACL = aclToS3CannedAcl(acl)
       )
-    
     let task = amazonS3client.PutBucketAsync(putBucketRequest)
     task.Wait()
-    if task.IsCompletedSuccessfully then
-      Some task.Result
-    else
-      None
+
+    let putBucketResponseResult = 
+      if task.IsCompletedSuccessfully then
+        Some task.Result
+      else
+        None
+    
+    let _a =
+      if putBucketResponseResult.IsSome then
+        // let putBucketTaggingRequest = 
+          // PutBucketTaggingRequest(
+          //   BucketName = bucket, 
+          //   TagSet =  List<Tag>{ Tag { Key = "my-key", Value = "my-value"}}
+          // )
+        Some 1
+      else
+        None
+    // return
+    putBucketResponseResult
 
   let createS3bucket (amazonS3client:AmazonS3Client) (bucket:AwsS3Bucket) =
     match bucket with 
-      | Website config -> createAwsS3Bucket amazonS3client config.Bucket config.Region config.Acl
-      | Redirect config -> createAwsS3Bucket amazonS3client config.Bucket config.Region config.Acl
-      | Private config -> createAwsS3Bucket amazonS3client config.Bucket config.Region config.Acl
+      | Website config -> { PutBucketResponseResult = (createAwsS3Bucket amazonS3client config.Bucket config.Region config.Acl) }
+      | Redirect config -> { PutBucketResponseResult = (createAwsS3Bucket amazonS3client config.Bucket config.Region config.Acl) }
+      | Private config -> { PutBucketResponseResult = (createAwsS3Bucket amazonS3client config.Bucket config.Region config.Acl) }
 
