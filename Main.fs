@@ -64,7 +64,7 @@ module Main =
 
     // redirect l1x.be -> dev.l1x.be
     let l1xbeBucketConfig = 
-      createRedirectOnlyBucketConfig "l1x.be" EuWest1 { RedirectTo = "dev.l1x.be" } websiteTags 
+      createRedirectOnlyBucketConfig "l1x.be" EUW1 { RedirectTo = "dev.l1x.be" } websiteTags 
 
     let l1xbeBucket = 
       createRedirectOnlyBucket l1xbeBucketConfig
@@ -74,16 +74,11 @@ module Main =
       { IndexDocument = "index.html"; ErrorDocument = "error.html"; }
 
     let devl1xbeBucketConfig = 
-      createWebsiteBucketConfig "dev.l1x.be" EuWest1 websiteDocuments websiteTags
+      createWebsiteBucketConfig "dev.l1x.be" EUW1 websiteDocuments websiteTags
 
     let devl1xbeBucket = 
       createWebsiteBucket devl1xbeBucketConfig
 
-
-
-    // let miez = PutBucketRequest(BucketName = l1xbeBucket)
-    // amazonS3client.PutBucketAsync
-    // Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message)
     ()
 
   

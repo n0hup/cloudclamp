@@ -1,4 +1,5 @@
 namespace CloudClamp
+open Amazon.S3.Model
 
 module AwsS3Bucket =
 
@@ -6,20 +7,31 @@ module AwsS3Bucket =
 
   // We only allow these
   
-  type AwsRegion = 
-   | EuCentral1
-   | EuWest1
+  type AllowedAwsRegions = 
+   | EUC1
+   | EUW1
 
-  let awsRegionToString (region:AwsRegion):string =
+  let allowedAwsRegionsToS3region (region) =
     match region with
-    | EuCentral1  -> "eu-central-1"
-    | EuWest1     -> "eu-west-1"
+    | EUW1 -> S3Region.EUW1
+    | EUC1 -> S3Region.EUC1
+
+  let awsRegionToString (region:AllowedAwsRegions):string =
+    match region with
+    | EUC1  -> "eu-central-1"
+    | EUW1     -> "eu-west-1"
 
   type PrivateAcl = 
     PrivateAcl
 
   type PublicReadAcl = 
     PublicReadAcl
+
+  let aclToS3CannedAcl (acl:obj) =
+    match acl with
+    | :? PrivateAcl     -> S3CannedACL.Private
+    | :? PublicReadAcl  -> S3CannedACL.PublicRead
+    | _                 -> S3CannedACL.NoACL
 
   type Tag = string * string
 
@@ -37,7 +49,7 @@ module AwsS3Bucket =
   type RedirectOnlyConfig = {
     Bucket  : string;
     Acl     : PublicReadAcl;
-    Region  : AwsRegion;
+    Region  : AllowedAwsRegions;
     Website : RedirectOnly;
     Tags    : Tags ;
   }
@@ -45,7 +57,7 @@ module AwsS3Bucket =
   type WebsiteConfig = {
     Bucket  : string;
     Acl     : PublicReadAcl;
-    Region  : AwsRegion;
+    Region  : AllowedAwsRegions;
     Website : WebsiteDocuments;
     Tags    : Tags ;
   }
@@ -53,7 +65,7 @@ module AwsS3Bucket =
   type PrivateBucketConfig = {
     Bucket  : string;
     Acl     : PrivateAcl;
-    Region  : AwsRegion;
+    Region  : AllowedAwsRegions;
     Tags    : Tags ;
   }
 
@@ -92,12 +104,25 @@ module AwsS3Bucket =
 
   // Creating the bucket
 
-  let createAwsS3Bucket (amazonS3client:AmazonS3Client) (bucket) (region) =
-    ()
+  let createAwsS3Bucket (amazonS3client:AmazonS3Client) (bucket) (region) (acl) =
+    
+    let putBucketRequest = 
+      PutBucketRequest(
+        BucketName = bucket, 
+        BucketRegion = allowedAwsRegionsToS3region(region),
+        CannedACL = aclToS3CannedAcl(acl)
+      )
+    
+    let task = amazonS3client.PutBucketAsync(putBucketRequest)
+    task.Wait()
+    if task.IsCompletedSuccessfully then
+      Some task.Result
+    else
+      None
 
   let createS3bucket (amazonS3client:AmazonS3Client) (bucket:AwsS3Bucket) =
     match bucket with 
-      | Website config -> createAwsS3Bucket amazonS3client config.Bucket config.Region
-      | Redirect config -> createAwsS3Bucket amazonS3client config.Bucket config.Region
-      | Private config -> createAwsS3Bucket amazonS3client config.Bucket config.Region
+      | Website config -> createAwsS3Bucket amazonS3client config.Bucket config.Region config.Acl
+      | Redirect config -> createAwsS3Bucket amazonS3client config.Bucket config.Region config.Acl
+      | Private config -> createAwsS3Bucket amazonS3client config.Bucket config.Region config.Acl
 
