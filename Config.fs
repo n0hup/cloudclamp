@@ -8,5 +8,5 @@ module Config =
   type JsonConfig =
     JsonProvider<"./config.prod.json">
 
-  let config =
+  let jsonConfig =
     JsonConfig.Parse(File.ReadAllText("./config.prod.json"))

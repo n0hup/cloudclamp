@@ -1,14 +1,5 @@
 {
   "aws-region": "eu-west-1",
   "date-time-format-string": "yyyy-MM-ddTHH:mm:ss:fffffK",
-  "dt-partition-format-string": "yyyy-MM-dd-HH-mm",
-  "aws-kinesis-stream": "trck-prod",
-  "aws-kinesis-batch-size": 4096,
-  "aws-s3-bucket": "li-dwh",
-  "aws-s3-input-folder": "raw/prod/trck/",
-  "aws-s3-output-folder": "incoming/prod/trck/",
-  "aws-dynamo-table-name": "trck-kinesis-state",
-  "numberOfActions": 8,
-  "aws-profile-name": "li-istvan",
-  "athena-table-name":"dwh.trck"
+  "aws-profile-name": "li-istvan"
 }

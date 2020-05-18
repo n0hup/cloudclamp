@@ -6,6 +6,7 @@ open Amazon.S3
 open Amazon.S3.Model
 open Amazon.Runtime.CredentialManagement
 open System
+open System.Collections.Generic
 
 // internal
 open AwsS3Bucket
@@ -58,48 +59,56 @@ module Main =
   //  We need to figure out how to structure this
   let createS3Buckets (amazonS3client:AmazonS3Client) =
 
-    let websiteTags : Tags = 
-      Some [  ("Name", "l1x.be"); ("Environment", "website"); 
-              ("Scope", "global"); ("Stage", "prod")          ]
+    // Tags
 
-    // redirect l1x.be -> dev.l1x.be
-    let l1xbeBucketConfig = 
-      createRedirectOnlyBucketConfig "l1x.be" EUW1 { RedirectTo = "dev.l1x.be" } websiteTags 
+    let websiteTags = 
+      [   ("Name", "l1x.be"); ("Environment", "website"); 
+          ("Scope", "global"); ("Stage", "prod");         ]
 
-    let l1xbeBucket = 
-      createRedirectOnlyBucket l1xbeBucketConfig
+    let websiteAwsS3Tags = convertToS3Tags websiteTags
 
     // dev.l1x.be
+
     let websiteDocuments : WebsiteDocuments = 
       { IndexDocument = "index.html"; ErrorDocument = "error.html"; }
 
     let devl1xbeBucketConfig = 
-      createWebsiteBucketConfig "dev.l1x.be" EUW1 websiteDocuments websiteTags
+      createWebsiteBucketConfig "dev.l1x.be" EUW1 websiteDocuments websiteAwsS3Tags
 
     let devl1xbeBucket = 
       createWebsiteBucket devl1xbeBucketConfig
 
-    ()
+    match createS3bucket amazonS3client devl1xbeBucket websiteAwsS3Tags with 
+      | response -> Console.WriteLine("O hai, {0}", response)
 
-  
+    // redirect l1x.be -> dev.l1x.be
+
+    let l1xbeBucketConfig = 
+      createRedirectOnlyBucketConfig "l1x.be" EUW1 { RedirectTo = "dev.l1x.be" } websiteAwsS3Tags 
+
+    let l1xbeBucket = 
+      createRedirectOnlyBucket l1xbeBucketConfig 
+
+    match createS3bucket amazonS3client l1xbeBucket websiteAwsS3Tags with 
+      | response -> Console.WriteLine("O hai, {0}", response)
 
 
   [<EntryPoint>]
   let main argv =
-    let awsProfileCredentials = getAwsProfileCredentials config.AwsProfileName
+    let awsProfileCredentials = getAwsProfileCredentials jsonConfig.AwsProfileName
     if awsProfileCredentials.IsSome then
       Console.WriteLine("AWS Credentials are [OK]")
     else
       Console.WriteLine("AWS Credentials could not be created [ERR]")
       Environment.Exit(1)
 
-    let awsS3Config = createAwsS3Config config.AwsRegion
+    let awsS3Config = createAwsS3Config jsonConfig.AwsRegion
     let awsS3Client = getAwsS3Client awsProfileCredentials.Value awsS3Config
 
     if awsS3Client.IsSome then
       createS3Buckets awsS3Client.Value
     else
-      ()
+      Console.Error.WriteLine("Could not connect to AWS S3")
     
     //return
     0
