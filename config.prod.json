@@ -1,5 +1,9 @@
 {
   "aws-region": "eu-west-1",
   "date-time-format-string": "yyyy-MM-ddTHH:mm:ss:fffffK",
-  "aws-profile-name": "li-istvan"
+  "aws-profile-name": "li-istvan",
+  "allowed-aws-regions": [
+    "eu-west-1",
+    "eu-central-1"
+  ]
 }

@@ -8,21 +8,63 @@ module AwsS3Bucket =
   open Amazon.S3.Model
   open System.Collections.Generic
 
-  // We only allow these
-  
-  type AllowedAwsRegions = 
-   | EUC1
-   | EUW1
+  let (|AllowedS3Region|_|) (region:string, allowedAwsRegions) =
+    match region, Array.contains region allowedAwsRegions with
+      | "eu-central-1", true  -> Some S3Region.EUC1
+      // Europe (Ireland) eu-west-1
+      | "eu-west-1", true     -> Some S3Region.EUW1
+      // Europe (London) eu-west-2
+      | "eu-west-2", true     -> Some S3Region.EUW2
+      // Europe (Milan) eu-south-1
+      // Europe (Paris) eu-west-3
+      | "eu-west-3", true     -> Some S3Region.EUW3
+      // Europe (Stockholm) eu-north-1
+      | "eu-north-1", true    -> Some S3Region.EUN1
+      | _, _ -> None
 
-  let allowedAwsRegionsToS3region (region) =
-    match region with
-    | EUW1 -> S3Region.EUW1
-    | EUC1 -> S3Region.EUC1
-
-  let awsRegionToString (region:AllowedAwsRegions):string =
-    match region with
-    | EUC1  -> "eu-central-1"
-    | EUW1  -> "eu-west-1"
+  // let allowedRegion (region:string) (allowedRegions) : AllowedS3Region =
+  //   match region, (Array.contains region allowedRegions) with
+  //     // US
+  //     // US East (N. Virginia) us-east-1
+  //     | "us-east-1", true  -> Allowed S3Region.US // Not sure about this
+  //     // US East (Ohio) us-east-2
+  //     | "us-east-2", true  -> Allowed S3Region.USE2
+  //     // US West (N. California) us-west-1
+  //     | "us-west-1", true  -> Allowed S3Region.USW1
+  //     // US West (Oregon) us-west-2
+  //     | "us-west-2", true  -> Allowed S3Region.USW2
+  //     // Africa
+  //     // Africa (Cape Town) af-south-1
+  //     // Asia
+  //     // Asia Pacific (Hong Kong) ap-east-1
+  //     // Asia Pacific (Mumbai) ap-south-1
+  //     // Asia Pacific (Osaka-Local) ap-northeast-3
+  //     // Asia Pacific (Seoul) ap-northeast-2
+  //     // Asia Pacific (Singapore) ap-southeast-1
+  //     // Asia Pacific (Sydney) ap-southeast-2
+  //     // Asia Pacific (Tokyo) ap-northeast-1
+  //     // Canada
+  //     // Canada (Central) ca-central-1
+  //     // China
+  //     // China (Beijing) cn-north-1
+  //     // China (Ningxia) cn-northwest-1
+  //     // Europe
+  //     // Europe (Frankfurt) eu-central-1
+  //     | "eu-central-1", true  -> Allowed S3Region.EUC1
+  //     // Europe (Ireland) eu-west-1
+  //     | "eu-west-1", true     -> Allowed S3Region.EUW1
+  //     // Europe (London) eu-west-2
+  //     | "eu-west-2", true     -> Allowed S3Region.EUW2
+  //     // Europe (Milan) eu-south-1
+  //     // Europe (Paris) eu-west-3
+  //     | "eu-west-3", true     -> Allowed S3Region.EUW3
+  //     // Europe (Stockholm) eu-north-1
+  //     | "eu-north-1", true     -> Allowed S3Region.EUN1
+  //     // Middle East
+  //     // Middle East (Bahrain) me-south-1
+  //     // South America
+  //     // South America (São Paulo) sa-east-1
+  //     | _, _                -> NotAllowed
 
   type PrivateAcl = 
     PrivateAcl
@@ -42,7 +84,7 @@ module AwsS3Bucket =
     let awsS3Tags = List<Tag>()
     for tag in tags do
       let tba : Tag =  Tag()
-      tba.Key <- fst tag
+      tba.Key   <- fst tag
       tba.Value <- snd tag
       awsS3Tags.Add(tba)
     Some awsS3Tags
@@ -59,7 +101,7 @@ module AwsS3Bucket =
   type RedirectOnlyConfig = {
     Bucket  : string;
     Acl     : PublicReadAcl;
-    Region  : AllowedAwsRegions;
+    Region  : S3Region;
     Website : RedirectOnly;
     Tags    : Tags ;
   }
@@ -67,7 +109,7 @@ module AwsS3Bucket =
   type WebsiteConfig = {
     Bucket  : string;
     Acl     : PublicReadAcl;
-    Region  : AllowedAwsRegions;
+    Region  : S3Region;
     Website : WebsiteDocuments;
     Tags    : Tags ;
   }
@@ -75,7 +117,7 @@ module AwsS3Bucket =
   type PrivateBucketConfig = {
     Bucket  : string;
     Acl     : PrivateAcl;
-    Region  : AllowedAwsRegions;
+    Region  : S3Region;
     Tags    : Tags ;
   }
 
@@ -105,7 +147,7 @@ module AwsS3Bucket =
 
   // Website
 
-  let createWebsiteBucketConfig (bucketName:string) (region:AllowedAwsRegions) (websiteDocuments:WebsiteDocuments) (tags:Tags) : WebsiteConfig  =
+  let createWebsiteBucketConfig (bucketName:string) (region:S3Region) (websiteDocuments:WebsiteDocuments) (tags:Tags) : WebsiteConfig  =
     { 
       Bucket = bucketName; 
       Acl = PublicReadAcl; 
@@ -121,12 +163,12 @@ module AwsS3Bucket =
 
   // Creating a bucket
 
-  let inline putBucket (amazonS3client:AmazonS3Client) bucket region acl =
+  let putBucket (amazonS3client:AmazonS3Client) bucket (region:S3Region) acl =
     try
       let putBucketRequest = 
         PutBucketRequest(
           BucketName = bucket, 
-          BucketRegion = allowedAwsRegionsToS3region(region),
+          BucketRegion = region,
           CannedACL = aclToS3CannedAcl(acl)
         )
       let task = amazonS3client.PutBucketAsync(putBucketRequest)
@@ -190,13 +232,17 @@ module AwsS3Bucket =
     with ex ->
       Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
 
-  let inline createAwsS3Bucket (amazonS3client:AmazonS3Client) (bucket:string) (region:AllowedAwsRegions) (acl) (tags:Tags) =
+  let createAwsS3Bucket (amazonS3client:AmazonS3Client) (bucket:string) (region:S3Region) (acl) (tags:Tags) =
   
     let putBucketResponseResult = putBucket amazonS3client bucket region acl
 
     let putBucketTaggingResult =
       match putBucketResponseResult, tags with
-      | _, _ -> 1
+      | Ok v, Some tags -> 1
+      | Ok v, None      -> 1
+      | Error err, _    -> 1
+  
+    1
     //   if putBucketResponseResult.IsSome && tags.IsSome then
     //     putBucketTagging (amazonS3client:AmazonS3Client) bucket tags.Value
     //   else
