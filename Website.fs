@@ -2,36 +2,36 @@ namespace CloudClamp
 
 // external
 open Amazon.S3
+open Amazon.Runtime
 open System
 
 // internal
-open AwsS3Bucket
+open Aws
+open AwsS3
 open Config
+open Utils
 
 module Website =
 
-  // Common parameters
+  // Utils
 
-  // Stage Specific Parameters
+  let awsProfileCredentials (awsProfileName:string) =
+    getAwsCredentials (SharedFile(fileName = None, profileName = awsProfileName))
 
-  let prod x =
-    ()
+  let createS3Client awsRegion awsProfileName =
+    getAwsS3Client 
+      (getOkValue (awsProfileCredentials awsProfileName)) 
+      (getOkValue (createAwsS3Config awsRegion))
 
-  let dev x =
-    ()
-
-  let qa x =
-    ()
-
-  let createS3Buckets (amazonS3client:AmazonS3Client) =
+  let createS3Buckets (amazonS3client:AmazonS3Client) (stage:string) =
     
-    let jsonConfig = (jsonConfig "prod")
+    let jsonConfig = (jsonConfig stage)
     
     // Tags
 
     let websiteTags = 
       [   ("Name", "l1x.be"); ("Environment", "website"); 
-          ("Scope", "global"); ("Stage", "prod");         ]
+          ("Scope", "global"); ("Stage", stage);         ]
 
     let websiteAwsS3Tags = convertToS3Tags websiteTags
 
@@ -73,3 +73,11 @@ module Website =
 
     match createS3bucket amazonS3client l1xbeBucket websiteAwsS3Tags with 
       | response -> Console.WriteLine("O hai, {0}", response)
+
+
+  let prod awsRegion awsProfileName  =
+    let s3ClientMaybe = createS3Client awsRegion awsProfileName
+    match s3ClientMaybe with
+    | Ok s3Client -> createS3Buckets s3Client "prod"
+    | Error err -> Console.Error.WriteLine("{0}", err)
+    

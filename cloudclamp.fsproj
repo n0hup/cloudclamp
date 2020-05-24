@@ -10,7 +10,9 @@
 
   <ItemGroup>
     <Compile Include="Config.fs"      />
-    <Compile Include="AwsS3Bucket.fs" />
+    <Compile Include="Utils.fs"      />
+    <Compile Include="Aws.fs"      />    
+    <Compile Include="AwsS3.fs" />
     <Compile Include="Website.fs"        />
     <Compile Include="Main.fs"        />
     <None Include="config.*.json">

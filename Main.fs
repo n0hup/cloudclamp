@@ -16,87 +16,14 @@ open Website
 
 module Main =
   
-  let getOkValue (Ok v) =
-    v
-
-  let getAwsProfileCredentials profileName  =
-    try
-      let sharedFile = SharedCredentialsFile();
-      let success1, basicProfile = sharedFile.TryGetProfile(profileName)
-      let success2, awsCredentials = AWSCredentialsFactory.TryGetAWSCredentials(basicProfile, sharedFile)
-      if success1 && success2 then
-        Console.WriteLine(
-          "CredentialDescription : {0}  credentials: {1}",
-          basicProfile.CredentialDescription,
-          awsCredentials.GetCredentials
-        )
-        Ok awsCredentials
-      else
-        Error "Could not get AWS credentials"
-    with ex ->
-      Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message)
-      Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
-
-  let createAwsS3Config awsRegionName =
-    try
-      let region = RegionEndpoint.GetBySystemName(awsRegionName)
-      let config = AmazonS3Config()
-      config.MaxConnectionsPerServer <- new Nullable<int>(64)
-      config.RegionEndpoint <- region
-      Ok config
-    with ex ->
-      Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message)
-      Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
 
 
-  let getAwsS3Client awsCredentials (awsS3Config:AmazonS3Config) =
-    try
-      Console.WriteLine("Connecting to S3...")
-      Console.WriteLine(
-        "AWS S3 Config: RegionEndpoint :: {0} MaxConnectionsPerServer :: {1} BufferSize :: {2} ServiceVersion :: {3}",
-        awsS3Config.RegionEndpoint,
-        awsS3Config.MaxConnectionsPerServer,
-        awsS3Config.BufferSize,
-        awsS3Config.ServiceVersion
-      )
-      Ok(new AmazonS3Client(awsCredentials, awsS3Config))
-    with ex ->
-      Console.Error.WriteLine("Connecting to S3 has failed")
-      let err = String.Format("{0} : {1}", ex.Message, ex.InnerException.Message)
-      Console.Error.WriteLine err
-      Error err
 
   [<EntryPoint>]
   let main argv =
     let jsonConfig = (jsonConfig "prod")
     
-    let awsProfileCredentials = 
-      match getAwsProfileCredentials jsonConfig.AwsProfileName with
-      | Ok creds -> 
-          Console.WriteLine("AWS Credentials are ok");
-          Ok creds
-      | Error err ->
-          Console.Error.WriteLine("AWS Credentials could not be created");
-          Console.Error.WriteLine(err);
-          Environment.Exit(1);
-          Error "This will be never reached"
 
-    let awsS3Config = 
-      match createAwsS3Config jsonConfig.AwsRegion with
-        | Ok config -> 
-            Ok config
-        | Error err -> 
-            Console.Error.WriteLine("AWS Config could not be created");
-            Console.Error.WriteLine(err);
-            Environment.Exit(1);
-            Error "This will be never reached"
-
-    let awsS3ClientMaybe = 
-      getAwsS3Client (getOkValue awsProfileCredentials) (getOkValue awsS3Config)
-
-    match awsS3ClientMaybe with
-      | Ok awsS3Client -> createS3Buckets awsS3Client
-      | Error err -> Console.Error.WriteLine(err)
 
   // let fromStringToStage (s) : Stage =
   //    "dev" -> Dev

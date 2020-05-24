@@ -1,12 +1,42 @@
 namespace CloudClamp
 
+open Amazon
+open Amazon.S3
+open Amazon.S3.Model
+open System
+open System.Collections.Generic
 
-module AwsS3Bucket =
+module AwsS3 =
 
-  open Amazon.S3
-  open System
-  open Amazon.S3.Model
-  open System.Collections.Generic
+  let getAwsS3Client awsCredentials (awsS3Config:AmazonS3Config) =
+    try
+      Console.WriteLine("Connecting to S3...")
+      Console.WriteLine(
+        "AWS S3 Config: RegionEndpoint :: {0} MaxConnectionsPerServer :: {1} BufferSize :: {2} ServiceVersion :: {3}",
+        awsS3Config.RegionEndpoint,
+        awsS3Config.MaxConnectionsPerServer,
+        awsS3Config.BufferSize,
+        awsS3Config.ServiceVersion
+      )
+      Ok(new AmazonS3Client(awsCredentials, awsS3Config))
+    with ex ->
+      Console.Error.WriteLine("Connecting to S3 has failed")
+      let err = String.Format("{0} : {1}", ex.Message, ex.InnerException.Message)
+      Console.Error.WriteLine err
+      Error err
+
+  let createAwsS3Config awsRegionName =
+    try
+      let region = RegionEndpoint.GetBySystemName(awsRegionName)
+      let config = AmazonS3Config()
+      config.MaxConnectionsPerServer <- new Nullable<int>(64)
+      config.RegionEndpoint <- region
+      Ok config
+    with ex ->
+      Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message);
+      Environment.Exit(1);
+      Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+
 
   let (|AllowedS3Region|_|) (region:string, allowedAwsRegions) =
     match region, Array.contains region allowedAwsRegions with
