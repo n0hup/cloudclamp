@@ -6,16 +6,9 @@ open System.Reflection
 
 // internal
 open Cli
-// config values
-open Config
-// infrastucture
-open Website
-// open Hadoop
-// open Elk
+open Stage
 
 module Main =
-
-
 
   let callModuleFunction (moduleName:string) (functionName:string) = 
     let asm = Assembly.GetExecutingAssembly()
@@ -27,10 +20,14 @@ module Main =
 
   [<EntryPoint>]
   let main argv =
-    // callModuleFunction "CloudClamp.Website" "prod"
-
+    
     let commandLineArgumentsParsed = parseCommandLine (Array.toList argv)
     Console.WriteLine("{0}", commandLineArgumentsParsed)
+    
+    let stage = fromStageToString commandLineArgumentsParsed.Stage
+
+    callModuleFunction commandLineArgumentsParsed.Service stage
+
     //return
     0
 
