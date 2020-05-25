@@ -11,7 +11,8 @@
   <ItemGroup>
     <Compile Include="Config.fs"  />
     <Compile Include="Utils.fs"   />
-    <Compile Include="Stage.fs"   />
+    <Compile Include="Stage.fs"   />  
+    <Compile Include="Command.fs" />
     <Compile Include="Cli.fs"     />
     <Compile Include="Aws.fs"     />    
     <Compile Include="AwsS3.fs"   />

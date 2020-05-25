@@ -113,10 +113,10 @@ module Website =
       Console.Error.WriteLine("The only supported stage is prod for Website")
       Environment.Exit(1)
 
-  let show stage = 
+  let show (stage:string) = 
     executeCommand "show" stage
     
-  let plan stage =
+  let plan (stage:string) =
     executeCommand "plan" stage
     
   let deploy (stage:string) =

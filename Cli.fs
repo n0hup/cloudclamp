@@ -6,19 +6,12 @@ open System.Text.RegularExpressions
 
 // internal
 open Stage
+open Command
 
 module Cli =    
 
-  type Command = Plan | Deploy
-
   let isValidServiceName s =
-    Regex(@"^[a-zA-Z0-9-_]+$").Match(s).Success
-
-  let fromStringToCommand (s:string) : Result<Command,string> =
-    match s with
-      | "plan"    -> Ok Plan
-      | "deploy"  -> Ok Deploy
-      | _         -> Error "Unsupported command"
+    Regex(@"^[a-zA-Z0-9-_\.]+$").Match(s).Success
 
   // --stage qa --service hadoop --command deploy
   

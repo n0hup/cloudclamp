@@ -7,16 +7,19 @@ open System.Reflection
 // internal
 open Cli
 open Stage
+open Command
 
 module Main =
 
-  let callModuleFunction (moduleName:string) (functionName:string) = 
+  let callModuleFunction (moduleName:string) (functionName:string) (stage:string) = 
     let asm = Assembly.GetExecutingAssembly()
     for t in asm.GetTypes() do
       for m in t.GetMethods() do
         if t.FullName = moduleName && m.IsStatic && m.Name = functionName then 
           Console.WriteLine(String.Format("Invoking: {0}.{1}", t.FullName, m.Name))
-          m.Invoke(null, [||]) |> ignore
+          m.Invoke(null, [|stage|]) |> ignore
+        // else
+        //   Console.WriteLine(String.Format("NOT Invoking: {0}.{1}", t.FullName, m.Name))
 
   [<EntryPoint>]
   let main argv =
@@ -25,8 +28,8 @@ module Main =
     Console.WriteLine("{0}", commandLineArgumentsParsed)
     
     let stage = fromStageToString commandLineArgumentsParsed.Stage
-
-    callModuleFunction commandLineArgumentsParsed.Service stage
+    let command = fromCommandToString commandLineArgumentsParsed.Command
+    callModuleFunction commandLineArgumentsParsed.Service command stage
 
     //return
     0
