@@ -1,12 +1,11 @@
 ﻿namespace CloudClamp
 
 // external
-open Amazon
-open Amazon.S3
-open Amazon.Runtime.CredentialManagement
 open System
+open System.Reflection
 
 // internal
+open Cli
 // config values
 open Config
 // infrastucture
@@ -15,33 +14,23 @@ open Website
 // open Elk
 
 module Main =
-  
 
 
+
+  let callModuleFunction (moduleName:string) (functionName:string) = 
+    let asm = Assembly.GetExecutingAssembly()
+    for t in asm.GetTypes() do
+      for m in t.GetMethods() do
+        if t.FullName = moduleName && m.IsStatic && m.Name = functionName then 
+          Console.WriteLine(String.Format("Invoking: {0}.{1}", t.FullName, m.Name))
+          m.Invoke(null, [||]) |> ignore
 
   [<EntryPoint>]
   let main argv =
-    let jsonConfig = (jsonConfig "prod")
-    
+    // callModuleFunction "CloudClamp.Website" "prod"
 
-
-  // let fromStringToStage (s) : Stage =
-  //    "dev" -> Dev
-
-  // type Stage = Dev | Qa | Prod | Test
-  // -stage qa -service hadoop
-  // match stage, service
-  // 
-
-
-
-
-
-
-
-
-
-
+    let commandLineArgumentsParsed = parseCommandLine (Array.toList argv)
+    Console.WriteLine("{0}", commandLineArgumentsParsed)
     //return
     0
 
