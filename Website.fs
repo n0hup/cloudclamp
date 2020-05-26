@@ -30,54 +30,33 @@ module Website =
     // Tags
 
     let websiteTags = 
-      [   ("Name", "l1x.be"); ("Environment", "website"); 
-          ("Scope", "global"); ("Stage", "prod");         ]
-
-    let websiteAwsS3Tags = convertToS3Tags websiteTags
+      [   ("Name", "l1x.be");   ("Environment", "website"); 
+          ("Scope", "global");  ("Stage", "prod");         ]
 
     // dev.l1x.be
 
     let websiteDocuments : WebsiteDocuments = 
       { IndexDocument = "index.html"; ErrorDocument = "error.html"; }
 
-    let bucketRegionString = "eu-west-1"
+    let s3BucketWithConfigDev = createWebsiteBucketConfig "dev.l1x.be" "eu-west-1" "prod" websiteDocuments websiteTags
 
-    let devl1xbeBucketConfig =
-      match bucketRegionString, allowedAwsRegions with
-        | AllowedS3Region region  -> 
-          Some (createWebsiteBucketConfig "dev.l1x.be" region websiteDocuments websiteAwsS3Tags)
-        | _ ->
-          Console.Error.WriteLine("Unsupported region: {0}", bucketRegionString);
-          Environment.Exit 1;
-          None
+    createS3bucket amazonS3client s3BucketWithConfigDev |> ignore
     
-    let devl1xbeBucket = 
-      createWebsiteBucket devl1xbeBucketConfig.Value
-
-    match createS3bucket amazonS3client devl1xbeBucket websiteAwsS3Tags with 
-      | response -> Console.WriteLine("O hai, {0}", response)
-
     // redirect l1x.be -> dev.l1x.be
 
-    let l1xbeBucketConfig =
-      match bucketRegionString, allowedAwsRegions with
-        | AllowedS3Region region  -> 
-          Some (createRedirectOnlyBucketConfig "l1x.be" region { RedirectTo = "dev.l1x.be" } websiteAwsS3Tags)
-        | _ ->
-          Console.Error.WriteLine("Unsupported region: {0}", bucketRegionString);
-          Environment.Exit 1;
-          None
+    let s3BucketWithConfigApex = createRedirectBucketConfig "l1x.be" "eu-west-1" "prod" { RedirectTo = "dev.l1x.be" } websiteTags
     
-    let l1xbeBucket = 
-      createRedirectOnlyBucket l1xbeBucketConfig.Value
-
-    match createS3bucket amazonS3client l1xbeBucket websiteAwsS3Tags with 
-      | response -> Console.WriteLine("O hai, {0}", response)
+    createS3bucket amazonS3client s3BucketWithConfigApex |> ignore
+    
+    // end 
   
-
-  let getS3Buckets (amazonS3client:AmazonS3Client) = 
+  // Get bucket info for show
+  let getS3Buckets (amazonS3client:AmazonS3Client) allowedAwsRegions = 
+    // "dev.l1x.be"
+    // "l1x.be"
     ()
-
+  
+  // Determine 
   let planS3Buckets (amazonS3client:AmazonS3Client) allowedAwsRegions = 
     ()
 
@@ -96,11 +75,12 @@ module Website =
       let awsProfileName  = jsonConfig.AwsProfileName
 
       let s3ClientMaybe = createS3Client awsRegion awsProfileName
+
       match s3ClientMaybe, command with
         | Ok s3Client, "deploy" -> 
             createS3Buckets s3Client jsonConfig.AllowedAwsRegions
         | Ok s3Client, "show" -> 
-            getS3Buckets s3Client
+            getS3Buckets s3Client jsonConfig.AllowedAwsRegions
         | Ok s3Client, "plan" -> 
             planS3Buckets s3Client jsonConfig.AllowedAwsRegions
         | Ok _, _ -> 

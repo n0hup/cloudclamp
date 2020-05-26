@@ -9,15 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Config.fs"  />
-    <Compile Include="Utils.fs"   />
-    <Compile Include="Stage.fs"   />  
-    <Compile Include="Command.fs" />
-    <Compile Include="Cli.fs"     />
-    <Compile Include="Aws.fs"     />    
-    <Compile Include="AwsS3.fs"   />
-    <Compile Include="Website.fs" />
-    <Compile Include="Main.fs"    />
+    <Compile Include="Config.fs"            />
+    <Compile Include="Utils.fs"             />
+    <Compile Include="Stage.fs"             />  
+    <Compile Include="Command.fs"           />
+    <Compile Include="Cli.fs"               />
+    <Compile Include="Aws.fs"               />
+    <Compile Include="AwsS3Acl.fs"          />
+    <Compile Include="AwsS3GetBucket.fs"    />        
+    <Compile Include="AwsS3PutBucket.fs"    />        
+    <Compile Include="AwsS3.fs"             />
+    <Compile Include="Website.fs"           />
+    <Compile Include="Main.fs"              />
     <None Include="config.*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
