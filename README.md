@@ -2,6 +2,12 @@
 
 ## AWS
 
+### IAM
+
+### ACM
+
+### Route53
+
 ### S3
 
 ##### Bucket
@@ -26,3 +32,11 @@ sequenceDiagram
 ```    
 
 [![](https://mermaid.ink/img/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgcGFydGljaXBhbnQgSSBhcyBJbml0aWFsXG4gICAgcGFydGljaXBhbnQgTiBhcyBOb25FeGlzdGVudFxuICAgIHBhcnRpY2lwYW50IEMgYXMgQ3JlYXRlZFxuICAgIHBhcnRpY2lwYW50IEUgYXMgRXJyXG4gICAgSS0-Pk46IGdldFN0YXRlXG4gICAgSS0-PkM6IGdldFN0YXRlXG4gICAgSS0-PkU6IGdldFN0YXRlXG4gICAgTi0-PkM6IGNyZWF0ZVxuICAgIE4tPj5FOiBjcmVhdGVcbiAgICBDLS0-Pk46IGRlc3Ryb3lcbiAgICBDLT4-RTogZGVzdHJveVxuICAgIEMtPj5DOiB1cGRhdGVcbiAgICBDLT4-RTogdXBkYXRlIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifX0)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgcGFydGljaXBhbnQgSSBhcyBJbml0aWFsXG4gICAgcGFydGljaXBhbnQgTiBhcyBOb25FeGlzdGVudFxuICAgIHBhcnRpY2lwYW50IEMgYXMgQ3JlYXRlZFxuICAgIHBhcnRpY2lwYW50IEUgYXMgRXJyXG4gICAgSS0-Pk46IGdldFN0YXRlXG4gICAgSS0-PkM6IGdldFN0YXRlXG4gICAgSS0-PkU6IGdldFN0YXRlXG4gICAgTi0-PkM6IGNyZWF0ZVxuICAgIE4tPj5FOiBjcmVhdGVcbiAgICBDLS0-Pk46IGRlc3Ryb3lcbiAgICBDLT4-RTogZGVzdHJveVxuICAgIEMtPj5DOiB1cGRhdGVcbiAgICBDLT4-RTogdXBkYXRlIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifX0)
+
+### Api Gateway
+
+### Lambda
+
+### DynamoDB
+
+### Fargate
