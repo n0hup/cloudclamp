@@ -4,7 +4,7 @@ Type safe infrastructure as code with the full power of F#.
 
 ## Why?
 
-I am tired of dealing with configuration files and interpreters that has the expresiveness of Go, safetiness of C and performance of Ruby. Illegal configuration must be made impossible by the type system, compilation has to check as much as possible and using all language features is a must. ADTs are great for this. C# has libraries for pretty much every single vendor out there or it is trivial to implement the lacking support. There is a giant community of senior software engineers available on StackOverflow or LinkedIN. Debugging and performance tracing is largely solved.
+I am tired of dealing with configuration files and interpreters that has the expresiveness of Go, safetiness of C and performance of Ruby. Illegal configuration must be made impossible by the type system. ADTs are great for this. Compilation has to check as much as possible and using all language features is a must. C# has libraries for pretty much every single vendor out there or it is trivial to implement the lacking support. There is a giant community of senior software engineers available on StackOverflow or LinkedIN. Debugging and performance tracing is largely solved.
 
 ## Usage
 
@@ -14,8 +14,8 @@ CloudClamp has 3 concepts:
 - stage (dev, qa, prod, etc.)
 - command (show, plan, deploy)
 
-```
-./bin/release/netcoreapp3.1/cloudclamp --stage prod --command deploy --service CloudClamp.Website
+```bash
+cloudclamp --stage prod --command deploy --service CloudClamp.Website
 ```
 
 Right now there is no local state but this might change in the future. State must be per service/stage to avoid deployments blocking each other. There is a small amount of configuration in JSON (type safe) to configure basic things. More complex things live in code.
