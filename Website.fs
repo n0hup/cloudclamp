@@ -38,13 +38,17 @@ module Website =
     let websiteDocuments : WebsiteDocuments = 
       { IndexDocument = "index.html"; ErrorDocument = "error.html"; }
 
-    let s3BucketWithConfigDev = createWebsiteBucketConfig "dev.l1x.be" "eu-west-1" "prod" websiteDocuments websiteTags
+    let s3BucketWithConfigDev = 
+      createWebsiteBucketConfig "dev.l1x.be" "eu-west-1" "prod" websiteDocuments websiteTags
 
     createS3bucket amazonS3client s3BucketWithConfigDev |> ignore
     
     // redirect l1x.be -> dev.l1x.be
 
-    let s3BucketWithConfigApex = createRedirectBucketConfig "l1x.be" "eu-west-1" "prod" { RedirectTo = "dev.l1x.be" } websiteTags
+    let redirectTo : RedirectOnly = { RedirectTo = "dev.l1x.be" }
+
+    let s3BucketWithConfigApex = 
+      createRedirectBucketConfig "l1x.be" "eu-west-1" "prod" redirectTo websiteTags
     
     createS3bucket amazonS3client s3BucketWithConfigApex |> ignore
     
