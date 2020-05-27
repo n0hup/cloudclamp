@@ -74,18 +74,37 @@ sequenceDiagram
     participant N as NonExistent
     participant C as Created
     participant E as Err
-    I->>N: getState
+
     I->>C: getState
     I->>E: getState
-    N->>C: create
-    N->>E: create
-    C-->>N: destroy
-    C->>E: destroy
-    C->>C: update
-    C->>E: update
+    I->>N: getState
+
+    N->>C: putBucket
+    N->>E: putBucket
+
+    C->>C:   PutBucketTagging
+    C->>E:   PutBucketTagging
+
+    C->>C:  PutBucketWebsite
+    C->>E:   PutBucketWebsite
+
+    C->>C:  PutBucketPolicy
+    C->>E:   PutBucketPolicy
+
+    C-->>C: DeleteBucketTagging
+    C-->>E: DeleteBucketTagging
+
+    C-->>C: DeleteBucketWebsite
+    C-->>E:  DeleteBucketWebsite  
+    
+    C-->>C: DeleteBucketPolicy
+    C-->>E:  DeleteBucketPolicy  
+
+    C-->>N: deleteBucket
+    C-->>E: deleteBucket
 ```    
 
-[![](https://mermaid.ink/img/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgcGFydGljaXBhbnQgSSBhcyBJbml0aWFsXG4gICAgcGFydGljaXBhbnQgTiBhcyBOb25FeGlzdGVudFxuICAgIHBhcnRpY2lwYW50IEMgYXMgQ3JlYXRlZFxuICAgIHBhcnRpY2lwYW50IEUgYXMgRXJyXG4gICAgSS0-Pk46IGdldFN0YXRlXG4gICAgSS0-PkM6IGdldFN0YXRlXG4gICAgSS0-PkU6IGdldFN0YXRlXG4gICAgTi0-PkM6IGNyZWF0ZVxuICAgIE4tPj5FOiBjcmVhdGVcbiAgICBDLS0-Pk46IGRlc3Ryb3lcbiAgICBDLT4-RTogZGVzdHJveVxuICAgIEMtPj5DOiB1cGRhdGVcbiAgICBDLT4-RTogdXBkYXRlIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifX0)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgcGFydGljaXBhbnQgSSBhcyBJbml0aWFsXG4gICAgcGFydGljaXBhbnQgTiBhcyBOb25FeGlzdGVudFxuICAgIHBhcnRpY2lwYW50IEMgYXMgQ3JlYXRlZFxuICAgIHBhcnRpY2lwYW50IEUgYXMgRXJyXG4gICAgSS0-Pk46IGdldFN0YXRlXG4gICAgSS0-PkM6IGdldFN0YXRlXG4gICAgSS0-PkU6IGdldFN0YXRlXG4gICAgTi0-PkM6IGNyZWF0ZVxuICAgIE4tPj5FOiBjcmVhdGVcbiAgICBDLS0-Pk46IGRlc3Ryb3lcbiAgICBDLT4-RTogZGVzdHJveVxuICAgIEMtPj5DOiB1cGRhdGVcbiAgICBDLT4-RTogdXBkYXRlIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifX0)
+[![](https://mermaid.ink/img/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgcGFydGljaXBhbnQgSSBhcyBJbml0aWFsXG4gICAgcGFydGljaXBhbnQgTiBhcyBOb25FeGlzdGVudFxuICAgIHBhcnRpY2lwYW50IEMgYXMgQ3JlYXRlZFxuICAgIHBhcnRpY2lwYW50IEUgYXMgRXJyXG5cbiAgICBJLT4-QzogZ2V0U3RhdGVcbiAgICBJLT4-RTogZ2V0U3RhdGVcbiAgICBJLT4-TjogZ2V0U3RhdGVcblxuICAgIE4tPj5DOiBwdXRCdWNrZXRcbiAgICBOLT4-RTogcHV0QnVja2V0XG5cbiAgICBDLT4-QzogICBQdXRCdWNrZXRUYWdnaW5nXG4gICAgQy0-PkU6ICAgUHV0QnVja2V0VGFnZ2luZ1xuXG4gICAgQy0-PkM6ICBQdXRCdWNrZXRXZWJzaXRlXG4gICAgQy0-PkU6ICAgUHV0QnVja2V0V2Vic2l0ZVxuXG4gICAgQy0-PkM6ICBQdXRCdWNrZXRQb2xpY3lcbiAgICBDLT4-RTogICBQdXRCdWNrZXRQb2xpY3lcblxuICAgIEMtLT4-QzogRGVsZXRlQnVja2V0VGFnZ2luZ1xuICAgIEMtLT4-RTogRGVsZXRlQnVja2V0VGFnZ2luZ1xuXG4gICAgQy0tPj5DOiBEZWxldGVCdWNrZXRXZWJzaXRlXG4gICAgQy0tPj5FOiAgRGVsZXRlQnVja2V0V2Vic2l0ZSAgXG4gICAgXG4gICAgQy0tPj5DOiBEZWxldGVCdWNrZXRQb2xpY3lcbiAgICBDLS0-PkU6ICBEZWxldGVCdWNrZXRQb2xpY3kgIFxuXG4gICAgQy0tPj5OOiBkZWxldGVCdWNrZXRcbiAgICBDLS0-PkU6IGRlbGV0ZUJ1Y2tldFxuIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifSwidXBkYXRlRWRpdG9yIjpmYWxzZX0)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgcGFydGljaXBhbnQgSSBhcyBJbml0aWFsXG4gICAgcGFydGljaXBhbnQgTiBhcyBOb25FeGlzdGVudFxuICAgIHBhcnRpY2lwYW50IEMgYXMgQ3JlYXRlZFxuICAgIHBhcnRpY2lwYW50IEUgYXMgRXJyXG5cbiAgICBJLT4-QzogZ2V0U3RhdGVcbiAgICBJLT4-RTogZ2V0U3RhdGVcbiAgICBJLT4-TjogZ2V0U3RhdGVcblxuICAgIE4tPj5DOiBwdXRCdWNrZXRcbiAgICBOLT4-RTogcHV0QnVja2V0XG5cbiAgICBDLT4-QzogICBQdXRCdWNrZXRUYWdnaW5nXG4gICAgQy0-PkU6ICAgUHV0QnVja2V0VGFnZ2luZ1xuXG4gICAgQy0-PkM6ICBQdXRCdWNrZXRXZWJzaXRlXG4gICAgQy0-PkU6ICAgUHV0QnVja2V0V2Vic2l0ZVxuXG4gICAgQy0-PkM6ICBQdXRCdWNrZXRQb2xpY3lcbiAgICBDLT4-RTogICBQdXRCdWNrZXRQb2xpY3lcblxuICAgIEMtLT4-QzogRGVsZXRlQnVja2V0VGFnZ2luZ1xuICAgIEMtLT4-RTogRGVsZXRlQnVja2V0VGFnZ2luZ1xuXG4gICAgQy0tPj5DOiBEZWxldGVCdWNrZXRXZWJzaXRlXG4gICAgQy0tPj5FOiAgRGVsZXRlQnVja2V0V2Vic2l0ZSAgXG4gICAgXG4gICAgQy0tPj5DOiBEZWxldGVCdWNrZXRQb2xpY3lcbiAgICBDLS0-PkU6ICBEZWxldGVCdWNrZXRQb2xpY3kgIFxuXG4gICAgQy0tPj5OOiBkZWxldGVCdWNrZXRcbiAgICBDLS0-PkU6IGRlbGV0ZUJ1Y2tldFxuIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifSwidXBkYXRlRWRpdG9yIjpmYWxzZX0)
 
 #### Api Gateway
 

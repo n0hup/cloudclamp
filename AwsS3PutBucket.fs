@@ -8,13 +8,9 @@ open System.Collections.Generic
 
 // internal
 open AwsS3Acl
+open System.Net
 
 module AwsS3PutBucket =
-
-
-  // ############################################################################
-  // ########################  LOW LEVEL AWS CALLS ##############################
-  // ############################################################################
 
   // #############################  PUT BUCKET ##################################
 
@@ -24,16 +20,18 @@ module AwsS3PutBucket =
         PutBucketRequest(
           BucketName = bucket, 
           BucketRegion = region,
-          CannedACL = aclToS3CannedAcl(acl)
+          CannedACL = acl
         )
       let task = amazonS3client.PutBucketAsync(putBucketRequest)
       task.Wait()
-      if task.IsCompletedSuccessfully then
-        Ok task.Result
+      if task.IsCompletedSuccessfully && task.Result.HttpStatusCode = HttpStatusCode.OK then
+        Some task.Result
       else
-        Error (String.Format("Could not create bucket: {0}", bucket))
+        Console.Error.WriteLine("Could not put bucket: {0}", bucket)
+        None
     with ex ->
-      Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+      Console.Error.WriteLine(String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+      None
 
   let putBucketTagging (amazonS3client:AmazonS3Client) (bucket:string) (tags:List<Tag>) =
     try
@@ -44,12 +42,14 @@ module AwsS3PutBucket =
         )
       let task = amazonS3client.PutBucketTaggingAsync(putBucketTaggingRequest)
       task.Wait()   
-      if task.IsCompletedSuccessfully then
-        Ok task.Result
+      if task.IsCompletedSuccessfully && task.Result.HttpStatusCode = HttpStatusCode.OK then
+        Some task.Result
       else
-        Error "Could not add tagging to bucket"
+        Console.Error.WriteLine("Could not put bucket tagging: {0} tagging: {1}", bucket, tags)
+        None
     with ex ->
-      Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+      Console.Error.WriteLine(String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+      None
 
   let putBucketWebsite (amazonS3client:AmazonS3Client) (bucket:string) (webSiteConfiguration:WebsiteConfiguration) =
     try
@@ -59,13 +59,14 @@ module AwsS3PutBucket =
           WebsiteConfiguration = webSiteConfiguration
         )
       let task = amazonS3client.PutBucketWebsiteAsync(putBucketWebsiteRequest)
-      task.Wait()
-      if task.IsCompletedSuccessfully then
-        Ok task.Result
+      if task.IsCompletedSuccessfully && task.Result.HttpStatusCode = HttpStatusCode.OK then
+        Some task.Result
       else
-        Error "Could not add website configuration to bucket"
+        Console.Error.WriteLine("Could not put bucket website bucket: {0} website: {1}", bucket, webSiteConfiguration)
+        None
     with ex ->
-      Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+      Console.Error.WriteLine(String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+      None
 
   let putBucketPolicy (amazonS3client:AmazonS3Client) (bucket:string) (policy:string) =
     try
@@ -76,9 +77,11 @@ module AwsS3PutBucket =
         )
       let task = amazonS3client.PutBucketPolicyAsync(putBucketPolicyRequest)
       task.Wait()
-      if task.IsCompletedSuccessfully then
-        Ok task.Result
+      if task.IsCompletedSuccessfully && task.Result.HttpStatusCode = HttpStatusCode.OK then
+        Some task.Result
       else
-        Error "Could not add policy to bucket"
+        Console.Error.WriteLine("Could not put bucket policy bucket: {0} policy: {1}", bucket, policy)
+        None
     with ex ->
-      Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+      Console.Error.WriteLine(String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+      None

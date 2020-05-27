@@ -4,13 +4,9 @@ namespace CloudClamp
 open Amazon.S3
 open Amazon.S3.Model
 open System
+open System.Net
 
 module AwsS3GetBucket =
-
-
-  // ############################################################################
-  // ########################  LOW LEVEL AWS CALLS ##############################
-  // ############################################################################
 
   // #############################  GET BUCKET ##################################
 
@@ -22,7 +18,7 @@ module AwsS3GetBucket =
         )
       let task = amazonS3client.GetBucketPolicyAsync(getBucketPolicyRequest)
       task.Wait()
-      if task.IsCompletedSuccessfully then
+      if task.IsCompletedSuccessfully && task.Result.HttpStatusCode = HttpStatusCode.OK then
         Some task.Result.Policy      
       else
         Console.Error.WriteLine(String.Format("Could not get bucket policy: {0}", bucket))
@@ -39,7 +35,7 @@ module AwsS3GetBucket =
         )
       let task = amazonS3client.GetBucketWebsiteAsync(getBucketWebsiteRequest)
       task.Wait()
-      if task.IsCompletedSuccessfully then
+      if task.IsCompletedSuccessfully && task.Result.HttpStatusCode = HttpStatusCode.OK then
         Some task.Result.WebsiteConfiguration      
       else
         Console.Error.WriteLine(String.Format("Could not get bucket website configuration: {0}", bucket))
@@ -56,10 +52,10 @@ module AwsS3GetBucket =
         )
       let task = amazonS3client.GetBucketTaggingAsync(getBucketTaggingRequest)
       task.Wait()
-      if task.IsCompletedSuccessfully then
-        Some task.Result.TagSet      
+      if task.IsCompletedSuccessfully && task.Result.HttpStatusCode = HttpStatusCode.OK then
+        Some task.Result.TagSet
       else
-        Console.Error.WriteLine(String.Format("Could not get bucket tags: {0}", bucket))
+        Console.Error.WriteLine(String.Format("Could not get bucket tags or no tags are set: {0}", bucket))
         None
     with ex ->
       Console.Error.WriteLine(String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))

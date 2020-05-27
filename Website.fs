@@ -36,21 +36,24 @@ module Website =
     // dev.l1x.be
 
     let websiteDocuments : WebsiteDocuments = 
-      { IndexDocument = "index.html"; ErrorDocument = "error.html"; }
+      { IndexDocument = "index.html"; ErrorDocument = "error.html"; }  
 
     let s3BucketWithConfigDev = 
-      createWebsiteBucketConfig "dev.l1x.be" "eu-west-1" "prod" websiteDocuments websiteTags
+      createWebsiteBucketConfig "dev.l1x.be" "eu-west-1" "prod" websiteDocuments websiteTags None
 
-    createS3bucket amazonS3client s3BucketWithConfigDev |> ignore
+    let _ = createS3Bucket amazonS3client s3BucketWithConfigDev
     
     // redirect l1x.be -> dev.l1x.be
 
-    let redirectTo : RedirectOnly = { RedirectTo = "dev.l1x.be" }
+    let redirectTo : RedirectOnly = 
+      { RedirectTo = "dev.l1x.be" }
 
     let s3BucketWithConfigApex = 
-      createRedirectBucketConfig "l1x.be" "eu-west-1" "prod" redirectTo websiteTags
+      createRedirectBucketConfig "l1x.be" "eu-west-1" "prod" redirectTo websiteTags None
     
-    createS3bucket amazonS3client s3BucketWithConfigApex |> ignore
+    let _ = createS3Bucket amazonS3client s3BucketWithConfigApex 
+
+    ()
     
     // end 
   
