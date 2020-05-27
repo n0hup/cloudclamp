@@ -41,7 +41,8 @@ This website uses AWS S3. It only has one stage: prod. The bucket configuration 
     
     // redirect l1x.be -> dev.l1x.be
 
-    let redirectTo : RedirectOnly = { RedirectTo = "dev.l1x.be" }
+    let redirectTo : RedirectOnly = 
+      { RedirectTo = "dev.l1x.be" }
 
     let s3BucketWithConfigApex = 
       createRedirectBucketConfig "l1x.be" "eu-west-1" "prod" redirectTo websiteTags
