@@ -266,23 +266,36 @@ module AwsS3 =
     // return
     Redirect(config = config)
 
-  let lofasz (state:State) (desiredState:State) =
-    let rec lofasz2 state desiredState acc =
-      match state, desiredState with
-        | NonExistent, Created (name, acl, None, None, None)  -> PutBucket :: acc
-        | NonExistent, Created (name, acl, Some v, _, _)      -> PutBucketTagging :: acc
-        | NonExistent, Created (name, acl, _, Some v, _)      -> PutBucketWebsite :: acc
-        | NonExistent, Created (name, acl, _, _, Some v)      -> PutBucketPolicy :: acc
-        | _,_ -> acc
-    lofasz2 state desiredState []
+  let getEvents (additionalProperties) =
+    match additionalProperties with
+
+      | (None, None, None)   -> [ PutBucket ]
+
+      | (Some _, None, None) -> [ PutBucket; PutBucketTagging ]
+      | (None, Some _, None) -> [ PutBucket; PutBucketWebsite ]
+      | (None, None, Some _) -> [ PutBucket; PutBucketPolicy  ]
+ 
+      | (Some _, Some _, None) -> [ PutBucket; PutBucketTagging; PutBucketWebsite; ]
+      | (Some _, None, Some _) -> [ PutBucket; PutBucketTagging; PutBucketPolicy;  ]
+      | (None, Some _, Some _) -> [ PutBucket; PutBucketWebsite; PutBucketPolicy;  ]
+ 
+      | (Some _, Some _, Some _) -> [ PutBucket; PutBucketTagging; PutBucketWebsite; PutBucketPolicy; ]
+      
+   
 
   let createS3Bucket (amazonS3client:AmazonS3Client) (s3BucketConfig:S3BucketConfig) =
     try
       let basicConfig = 
         match s3BucketConfig with 
-          | Private config  ->  (config.Bucket, aclToS3CannedAcl(config.Acl), config.Region, config.Tags, config.Policy)
-          | Website config  ->  (config.Bucket, aclToS3CannedAcl(config.Acl), config.Region, config.Tags, config.Policy)
-          | Redirect config ->  (config.Bucket, aclToS3CannedAcl(config.Acl), config.Region, config.Tags, config.Policy)
+          | Private config  ->
+            Console.WriteLine("{0} ::: {1}", config.Tags, config.Policy)
+            (config.Bucket, aclToS3CannedAcl(config.Acl), config.Region, config.Tags, config.Policy)
+          | Website config  ->
+            Console.WriteLine("{0} ::: {1}", config.Tags, config.Policy)
+            (config.Bucket, aclToS3CannedAcl(config.Acl), config.Region, config.Tags, config.Policy)
+          | Redirect config ->
+            Console.WriteLine("{0} ::: {1}", config.Tags, config.Policy)
+            (config.Bucket, aclToS3CannedAcl(config.Acl), config.Region, config.Tags, config.Policy)
 
       let websiteConfig = 
         match s3BucketConfig with 
@@ -305,26 +318,23 @@ module AwsS3 =
           | _               
               ->  None
 
-      
-      
-
-
       let currentState = transition amazonS3client basicConfig websiteConfig redirectConfig Initial GetState
 
-      let miez = 
-        match currentState with
-          | NonExistent -> 
-            match transition amazonS3client basicConfig websiteConfig redirectConfig Initial PutBucket with
-              | Err -> Err
-              | Created (name, acl, None, None, None) -> transition amazonS3client basicConfig websiteConfig redirectConfig Initial PutBucket
-          | _ -> Err
+      let (_,_,_, tags, policy) = basicConfig
+      let website =
+        if websiteConfig.IsSome || redirectConfig.IsSome then
+          Some ""
+        else
+          None
 
-        // match s3BucketConfig with
-        //   | Website config -> (config.Bucket, aclToS3CannedAcl(config.Acl), config.Region, config.Tags, config.Policy)
+      Console.WriteLine("{0} ::: {1} ::: {2}", tags, website, policy)
 
-        // match currentState with
-        //   | NonExistent -> 
-        //       transition amazonS3client s3BucketConfig Initial PutBucket
+      let events = getEvents (tags, website, policy)
+
+      for e in events do
+        Console.WriteLine("{0}", e)
+
+      Console.WriteLine("{0}", events)
       Err              
     with ex ->
       Err
