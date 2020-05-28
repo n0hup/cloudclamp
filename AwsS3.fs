@@ -12,6 +12,7 @@ open AwsS3Acl
 open AwsS3GetBucket
 open AwsS3PutBucket
 open AwsS3DeleteBucket
+open AwsS3Printable
 
 module AwsS3 =
 
@@ -106,6 +107,21 @@ module AwsS3 =
     | Private of config   : PrivateBucketConfig
     | Redirect of config  : RedirectOnlyConfig
 
+  let getS3BucketConfigString config =
+    match config with
+      | Website config -> 
+          String.Format("Bucket: {0} Region: {1} Tags: {2} Website: {3} Policy: {4}", config.Bucket, config.Region, 
+            (getTagsString config.Tags), (config.Website.IndexDocument + ":" + config.Website.ErrorDocument), 
+            (getPolicyString config.Policy))
+      | Private config ->
+          String.Format("Bucket: {0} Region: {1} Tags: {2} Policy: {3}", config.Bucket, config.Region, 
+            (getTagsString config.Tags), (getPolicyString config.Policy))
+      | Redirect config ->
+          String.Format("Bucket: {0} Region: {1} Tags: {2} Website: {3} Policy: {4}", config.Bucket, config.Region, 
+            (getTagsString config.Tags), (config.Website.RedirectTo), 
+            (getPolicyString config.Policy))
+ 
+
   type Event = 
     | GetState 
     | PutBucket 
@@ -128,6 +144,19 @@ module AwsS3 =
         website : Option<WebsiteConfiguration> * 
         policy  : Option<string>
 
+  let stateToString (s:State) =
+    match s with
+      | Initial     -> "Initial"
+      | Err         -> "Err"
+      | NonExistent -> "NonExistent"
+      | Created (name, acl, tags, website, policy) -> 
+          String.Format("Created name: {0} - Acl: {1} - tags: {2} - website: {3} - policy: {4}", 
+            name, 
+            ("ACL :: Owner:" + acl.Owner.DisplayName + " Grants: " + acl.Grants.Capacity.ToString()),
+            (getTagsString tags), 
+            (getWebsiteConfigString website), 
+            (getPolicyString policy))
+
   let getState (amazonS3client:AmazonS3Client) (bucket:string) : State =
     try
       let task = AmazonS3Util.DoesS3BucketExistV2Async(amazonS3client, bucket)
@@ -139,11 +168,9 @@ module AwsS3 =
           // extra
           let bucketTags    = getBucketTagging  amazonS3client bucket
           let bucketWesite  = getBucketWebsite  amazonS3client bucket
-          let bucketPolicy  = getBucketPolicy   amazonS3client bucket
-          
-          // TODO nul pointer!!! None.Value
+          let bucketPolicy  = getBucketPolicy   amazonS3client bucket        
+          // TODO null pointer!!! None.Value
           Created(name=bucket, acl=bucketAcl.Value, tags=bucketTags, website=bucketWesite, policy=bucketPolicy)
-          
         else
           NonExistent
       else
@@ -266,35 +293,49 @@ module AwsS3 =
     // return
     Redirect(config = config)
 
-  let getEvents (additionalProperties) =
-    match additionalProperties with
+  let getEvents (currentState) (additionalProperties) =
+    match currentState, additionalProperties with
 
-      | (None, None, None)   -> [ PutBucket ]
+      | NonExistent, (None, None, None)   -> [ PutBucket ]
 
-      | (Some _, None, None) -> [ PutBucket; PutBucketTagging ]
-      | (None, Some _, None) -> [ PutBucket; PutBucketWebsite ]
-      | (None, None, Some _) -> [ PutBucket; PutBucketPolicy  ]
+      | NonExistent, (Some _, None, None) -> [ PutBucket; PutBucketTagging ]
+      | NonExistent, (None, Some _, None) -> [ PutBucket; PutBucketWebsite ]
+      | NonExistent, (None, None, Some _) -> [ PutBucket; PutBucketPolicy  ]
  
-      | (Some _, Some _, None) -> [ PutBucket; PutBucketTagging; PutBucketWebsite; ]
-      | (Some _, None, Some _) -> [ PutBucket; PutBucketTagging; PutBucketPolicy;  ]
-      | (None, Some _, Some _) -> [ PutBucket; PutBucketWebsite; PutBucketPolicy;  ]
+      | NonExistent, (Some _, Some _, None) -> [ PutBucket; PutBucketTagging; PutBucketWebsite; ]
+      | NonExistent, (Some _, None, Some _) -> [ PutBucket; PutBucketTagging; PutBucketPolicy;  ]
+      | NonExistent, (None, Some _, Some _) -> [ PutBucket; PutBucketWebsite; PutBucketPolicy;  ]
  
-      | (Some _, Some _, Some _) -> [ PutBucket; PutBucketTagging; PutBucketWebsite; PutBucketPolicy; ]
-      
-   
+      | NonExistent, (Some _, Some _, Some _) -> [ PutBucket; PutBucketTagging; PutBucketWebsite; PutBucketPolicy; ]
 
+      | Created (_), (Some _, None, None) -> [ PutBucketTagging ]
+      | Created (_), (None, Some _, None) -> [ PutBucketWebsite ]
+      | Created (_), (None, None, Some _) -> [ PutBucketPolicy  ]
+ 
+      | Created (_), (Some _, Some _, None) -> [ PutBucketTagging; PutBucketWebsite; ]
+      | Created (_), (Some _, None, Some _) -> [ PutBucketTagging; PutBucketPolicy;  ]
+      | Created (_), (None, Some _, Some _) -> [ PutBucketWebsite; PutBucketPolicy;  ]
+ 
+      | Created (_), (Some _, Some _, Some _) -> [ PutBucketTagging; PutBucketWebsite; PutBucketPolicy; ]
+
+      | _, _ -> []
+
+  let rec walkEvents amazonS3client basicConfig websiteConfig redirectConfig currentState events =
+    match currentState, events with
+      | currentState, []      -> currentState
+      | currentState, hd::tl  -> 
+          walkEvents amazonS3client basicConfig websiteConfig redirectConfig (transition amazonS3client basicConfig websiteConfig redirectConfig currentState hd) tl
+  
   let createS3Bucket (amazonS3client:AmazonS3Client) (s3BucketConfig:S3BucketConfig) =
     try
+      Console.WriteLine("s3BucketConfig: {0}", getS3BucketConfigString s3BucketConfig)
       let basicConfig = 
         match s3BucketConfig with 
           | Private config  ->
-            Console.WriteLine("{0} ::: {1}", config.Tags, config.Policy)
             (config.Bucket, aclToS3CannedAcl(config.Acl), config.Region, config.Tags, config.Policy)
           | Website config  ->
-            Console.WriteLine("{0} ::: {1}", config.Tags, config.Policy)
             (config.Bucket, aclToS3CannedAcl(config.Acl), config.Region, config.Tags, config.Policy)
           | Redirect config ->
-            Console.WriteLine("{0} ::: {1}", config.Tags, config.Policy)
             (config.Bucket, aclToS3CannedAcl(config.Acl), config.Region, config.Tags, config.Policy)
 
       let websiteConfig = 
@@ -317,209 +358,27 @@ module AwsS3 =
               Some webSiteConfiguration
           | _               
               ->  None
-
+              
       let currentState = transition amazonS3client basicConfig websiteConfig redirectConfig Initial GetState
+      Console.WriteLine("Current state: {0}", (stateToString currentState))
 
       let (_,_,_, tags, policy) = basicConfig
+
       let website =
         if websiteConfig.IsSome || redirectConfig.IsSome then
           Some ""
         else
           None
+      
+      let events = getEvents currentState (tags, website, policy)
+      
+      Console.WriteLine("The following chain of events will be processed: {0}", events)
 
-      Console.WriteLine("{0} ::: {1} ::: {2}", tags, website, policy)
+      let finalState = walkEvents amazonS3client basicConfig websiteConfig redirectConfig currentState events
 
-      let events = getEvents (tags, website, policy)
+      Console.WriteLine("Final state: {0}", (stateToString finalState))      
 
-      for e in events do
-        Console.WriteLine("{0}", e)
-
-      Console.WriteLine("{0}", events)
-      Err              
+      finalState     
     with ex ->
+      Console.Error.WriteLine("{0}", ex)
       Err
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // try      
-    //   let putBucketResult = putBucket amazonS3client config.Bucket config.Region config.Acl
-
-    //   let webSiteConfiguration = WebsiteConfiguration()
-    //   webSiteConfiguration.ErrorDocument        <- config.Website.ErrorDocument
-    //   webSiteConfiguration.IndexDocumentSuffix  <- config.Website.IndexDocument
-
-    //   Ok ()
-    // with ex ->
-    //   Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
-
-  // let createS3BucketRedirect (amazonS3client:AmazonS3Client) (config:RedirectOnlyConfig) =
-  //   try
-  //     // let putBucketResult = putBucket amazonS3client config.Bucket config.Region config.Acl
-  //     // let webSiteConfiguration  = WebsiteConfiguration()     
-  //     // let routingRuleRedirect   = RoutingRuleRedirect()
-  //     // routingRuleRedirect.HostName                <- config.Website.RedirectTo
-  //     // webSiteConfiguration.RedirectAllRequestsTo  <- routingRuleRedirect  
-  //     NonExistent
-  //   with ex ->
-  //     // Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
-  //     Err
-
-  // let createS3BucketPrivate (amazonS3client:AmazonS3Client) (config:PrivateBucketConfig) =
-  //   try
-      
-  //     let putBucketResult = putBucket amazonS3client config.Bucket config.Region config.Acl
-  //     NonExistent
-  //   with ex ->
-  //     // Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
-  //     Err
-
-
-      
-
-
-
-
-  // let createRedirectOnlyBucketConfig (bucketName) (region) (websiteToRedirectTo) (tags):RedirectOnlyConfig  =
-  //   { 
-  //     Bucket = bucketName; 
-  //     Acl = PublicReadAcl; 
-  //     Region = region;
-  //     Website = websiteToRedirectTo;
-  //     Tags = tags ;
-  //   }
-
-  // let createRedirectOnlyBucket (config:RedirectOnlyConfig) : AwsS3Bucket =
-  //   Redirect(config = config)
-
-  // // Website
-
-
-  
-
-
-  // // AWS CODE PATH
-
-  // // Creating a bucket
-
-  // let putBucket (amazonS3client:AmazonS3Client) bucket (region:S3Region) acl =
-  //   try
-  //     let putBucketRequest = 
-  //       PutBucketRequest(
-  //         BucketName = bucket, 
-  //         BucketRegion = region,
-  //         CannedACL = aclToS3CannedAcl(acl)
-  //       )
-  //     let task = amazonS3client.PutBucketAsync(putBucketRequest)
-  //     task.Wait()
-  //     if task.IsCompletedSuccessfully then
-  //       Ok task.Result
-  //     else
-  //       Error (String.Format("Could not create bucket: {0}", bucket))
-  //   with ex ->
-  //     Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
-
-  // let putBucketTagging (amazonS3client:AmazonS3Client) (bucket:string) (tags:List<Tag>) =
-  //   try
-  //     let putBucketTaggingRequest = 
-  //       PutBucketTaggingRequest(
-  //         BucketName = bucket, 
-  //         TagSet =  tags
-  //       )
-  //     let task = amazonS3client.PutBucketTaggingAsync(putBucketTaggingRequest)
-  //     task.Wait()   
-  //     if task.IsCompletedSuccessfully then
-  //       Ok task.Result
-  //     else
-  //       Error "Could not add tags to bucket"
-  //   with ex ->
-  //     Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
-
-  // let putBucketWebsite (amazonS3client:AmazonS3Client) (bucket:string) (webSiteConfiguration:WebsiteConfiguration) =
-  //   try
-  //     let putBucketWebsiteRequest = 
-  //       PutBucketWebsiteRequest(
-  //         BucketName = bucket,
-  //         WebsiteConfiguration = webSiteConfiguration
-  //       )
-  //     let task = amazonS3client.PutBucketWebsiteAsync(putBucketWebsiteRequest)
-  //     task.Wait()
-  //     if task.IsCompletedSuccessfully then
-  //       Ok task.Result
-  //     else
-  //       Error "Could not add website configuration to bucket"
-  //   with ex ->
-  //     Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
-
-
-
-  // // TODO Move this code to StateMachine
-  // // that would simplify show plan and create too
-
-  // let createAwsS3BucketPrivate (amazonS3client:AmazonS3Client) (region:S3Region) (bucket:string) (acl) (tags:Tags) =
-  
-  //   let putBucketResult = putBucket amazonS3client bucket region acl
-
-  //   let putBucketTaggingResult =
-  //     match putBucketResult, tags with
-  //     | Ok _, Some tags -> putBucketTagging amazonS3client bucket tags
-  //     | Ok _, None      -> Error "No tags were supplied"
-  //     | Error _, _    -> Error "Bucket creation error"
-    
-  //   match putBucketResult, putBucketTaggingResult with
-  //     | Ok pbr, Ok pbt  -> 
-  //         Console.WriteLine(
-  //           "Bucket has been successfully created: put bucket request id: {0} put tagging request id {1}", 
-  //           pbr.ResponseMetadata.RequestId, 
-  //           pbt.ResponseMetadata.RequestId)
-  //     | Ok pbr, Error pbt -> 
-  //         Console.WriteLine(
-  //           "Bucket has been successfully created: put bucket request id: {0} put tagging could NOT be completed {1}", 
-  //           pbr.ResponseMetadata.RequestId, 
-  //           pbt)
-  //     | Error pbr, _  -> 
-  //         Console.WriteLine(
-  //           "Bucket could NOT be created: {0}", 
-  //           pbr)
-
-
-  

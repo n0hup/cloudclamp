@@ -6,20 +6,25 @@
     <AssemblyName>CloudClamp</AssemblyName>
     <PackageId>CloudClamp</PackageId>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
-
+    
   <ItemGroup>
     <Compile Include="Config.fs"            />
     <Compile Include="Utils.fs"             />
     <Compile Include="Stage.fs"             />  
     <Compile Include="Command.fs"           />
     <Compile Include="Cli.fs"               />
+    <Compile Include="HttpStatus.fs"        />
+
     <Compile Include="Aws.fs"               />
     <Compile Include="AwsS3Acl.fs"          />
+    <Compile Include="AwsS3Printable.fs"    />
     <Compile Include="AwsS3GetBucket.fs"    />        
     <Compile Include="AwsS3PutBucket.fs"    />
     <Compile Include="AwsS3DeleteBucket.fs" />
     <Compile Include="AwsS3.fs"             />
+    
     <Compile Include="Website.fs"           />
     <Compile Include="Main.fs"              />
     <None Include="config.*.json">
@@ -29,9 +34,9 @@
   </ItemGroup>
 
  <ItemGroup>
-    <!-- <PackageReference Include="AWSSDK.S3"   Version="3.3.110.67" /> -->
-    <PackageReference Include="AWSSDK.S3" Version="3.5.0-beta" />
-    <PackageReference Include="FSharp.Data" Version="3.3.3"      />
+    <PackageReference Include="Logary"      Version="5.0.1"       />
+    <PackageReference Include="AWSSDK.S3"   Version="3.5.0-beta"  />
+    <PackageReference Include="FSharp.Data" Version="3.3.3"       />
   </ItemGroup>
 
 </Project>  

@@ -4,7 +4,9 @@ namespace CloudClamp
 open Amazon.S3
 open Amazon.S3.Model
 open System
-open System.Net
+
+// internal
+open HttpStatus
 
 module AwsS3DeleteBucket =
 
@@ -18,7 +20,7 @@ module AwsS3DeleteBucket =
         )
       let task = amazonS3client.DeleteBucketAsync(deleteBucketRequest)
       task.Wait()
-      if task.IsCompletedSuccessfully && task.Result.HttpStatusCode = HttpStatusCode.OK then
+      if task.IsCompletedSuccessfully && isHttpSuccess task.Result.HttpStatusCode then
         Some task.Result
       else
         Console.Error.WriteLine(String.Format("Could not delete bucket: {0}", bucket))

@@ -52,3 +52,6 @@ module Aws =
     match awsCredentialsProvider with
       | SharedFile (fileName, profileName) -> getAwsCredentialsFromSharedFile fileName profileName
       | InstanceProfile -> getAwsCredentialsFromInstanceProfile
+
+
+ 
