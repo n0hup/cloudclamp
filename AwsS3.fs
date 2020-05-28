@@ -67,6 +67,17 @@ module AwsS3 =
       awsS3Tags.Add(tba)
     Some awsS3Tags
 
+  type BucketLoggingConfig = {
+    TargetBucketName : string;
+    TargetPrefix : string;
+  }
+
+  let getS3BucketLoggingConfig (bucketLoggingConfig:BucketLoggingConfig) =
+    let s3BucketLoggingConfig = S3BucketLoggingConfig()
+    s3BucketLoggingConfig.TargetBucketName <- bucketLoggingConfig.TargetBucketName
+    s3BucketLoggingConfig.TargetPrefix <- bucketLoggingConfig.TargetPrefix
+    s3BucketLoggingConfig
+
   type WebsiteDocuments = {
     IndexDocument : string ;
     ErrorDocument : string ;
@@ -83,6 +94,7 @@ module AwsS3 =
     Website : RedirectOnly;
     Tags    : Option<List<Tag>> ;
     Policy  : Option<string>;
+    Logging : Option<BucketLoggingConfig>;
   }
 
   type WebsiteConfig = {
@@ -92,6 +104,7 @@ module AwsS3 =
     Website : WebsiteDocuments;
     Tags    : Option<List<Tag>> ;
     Policy  : Option<string>;
+    Logging : Option<BucketLoggingConfig>;
   }
 
   type PrivateBucketConfig = {
@@ -100,6 +113,7 @@ module AwsS3 =
     Region  : S3Region;
     Tags    : Option<List<Tag>> ;
     Policy  : Option<string>;
+    Logging : Option<BucketLoggingConfig>;
   }
 
   type S3BucketConfig =
@@ -254,9 +268,28 @@ module AwsS3 =
         Environment.Exit 1
         None
 
+  let createPrivateBucketConfig 
+    (bucketName: string) (region: string) (stage: string) 
+      (tags: list<string * string>) (policy) (logging) =
+    
+    let config = jsonConfig stage
+
+    let awsRegion = checkAllowedRegion region config.AllowedAwsRegions
+   
+    let config = { 
+      Bucket = bucketName; 
+      Acl = PrivateAcl; 
+      Region = awsRegion.Value;
+      Tags = (convertToS3Tags tags) ;
+      Policy = policy;
+      Logging = logging;
+    }
+    // return
+    Private(config = config)
+
   let createWebsiteBucketConfig 
     (bucketName: string) (region: string) (stage: string) 
-      (websiteDocuments: WebsiteDocuments) (tags: list<string * string>) (policy) =
+      (websiteDocuments: WebsiteDocuments) (tags: list<string * string>) (policy) (logging) =
     
     let config = jsonConfig stage
 
@@ -269,6 +302,7 @@ module AwsS3 =
       Website = websiteDocuments;
       Tags = (convertToS3Tags tags) ;
       Policy = policy;
+      Logging = logging;
     }
     // return
     Website(config = config)
@@ -276,7 +310,7 @@ module AwsS3 =
 
   let createRedirectBucketConfig 
     (bucketName:string) (region:string) (stage:string)
-      (redirect:RedirectOnly) (tags:list<string * string>) (policy)  =
+      (redirect:RedirectOnly) (tags:list<string * string>) (policy) (logging)  =
     
     let config = jsonConfig stage
 
@@ -289,6 +323,7 @@ module AwsS3 =
       Website = redirect;
       Tags = (convertToS3Tags tags) ;
       Policy = policy;
+      Logging = logging;
     }
     // return
     Redirect(config = config)
@@ -382,3 +417,8 @@ module AwsS3 =
     with ex ->
       Console.Error.WriteLine("{0}", ex)
       Err
+
+  let getS3Bucket (amazonS3client:AmazonS3Client) (bucket:string) =
+    let currentState = getState amazonS3client bucket
+    Console.WriteLine("Current state: {0}", (stateToString currentState))
+    currentState

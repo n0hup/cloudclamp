@@ -3,16 +3,12 @@
 // external
 open System
 open System.Reflection
-open Hopac
-open Logary
-open Logary.Message
-open Logary.Configuration
-open Logary.Targets
 
 // internal
 open Cli
 open Stage
 open Command
+open Logging
 
 module Main =
 
@@ -28,20 +24,11 @@ module Main =
 
   [<EntryPoint>]
   let main argv =
-    
-    let logary =
-      Config.create "CloudClamp" "Main"
-      |> Config.target (LiterateConsole.create LiterateConsole.empty "console")
-      |> Config.ilogger (ILogger.Console Debug)
-      |> Config.build
-      |> run
 
-    let logger = logary.getLogger "Main"
-
-    logger.info (eventX "Starting Main")
+    testLogging()
 
     let commandLineArgumentsParsed = parseCommandLine (Array.toList argv)
-    logger.info (eventX (String.Format("{0}", commandLineArgumentsParsed)))
+    // logger.info (eventX (String.Format("{0}", commandLineArgumentsParsed)))
     
     let stage = fromStageToString commandLineArgumentsParsed.Stage
     let command = fromCommandToString commandLineArgumentsParsed.Command

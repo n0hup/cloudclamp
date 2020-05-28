@@ -2,13 +2,14 @@ namespace CloudClamp
 
 // external
 open Amazon.S3
-open Amazon.Runtime
+open Amazon.S3.Model
 open System
 
 // internal
 open Aws
 open AwsS3
 open Config
+open Logging
 open Utils
 
 module Website =
@@ -25,7 +26,7 @@ module Website =
 
   // Create
 
-  let createS3Buckets (amazonS3client:AmazonS3Client) allowedAwsRegions =
+  let createS3Buckets (amazonS3client:AmazonS3Client) =
      
     // Tags
 
@@ -33,15 +34,38 @@ module Website =
       [   ("Name", "l1x.be");   ("Environment", "website"); 
           ("Scope", "global");  ("Stage", "prod");         ]
 
+    // logs.l1x.be
+
+    let s3BucketWithConfigLogs = 
+      createPrivateBucketConfig 
+        "logs.l1x.be"     // name
+        "eu-west-1"       // region
+        "prod"            // stage
+        websiteTags       // tagging
+        None              // policy
+        None              // logging
+    
+    createS3Bucket amazonS3client s3BucketWithConfigLogs |> ignore
+    
     // dev.l1x.be
 
     let websiteDocuments : WebsiteDocuments = 
       { IndexDocument = "index.html"; ErrorDocument = "error.html"; }  
 
-    let s3BucketWithConfigDev = 
-      createWebsiteBucketConfig "dev.l1x.be" "eu-west-1" "prod" websiteDocuments websiteTags None
+    let loggingConfig : BucketLoggingConfig =
+      {  TargetBucketName = "logs.l1x.be"; TargetPrefix = "dev.l1x.be" }
 
-    let _ = createS3Bucket amazonS3client s3BucketWithConfigDev
+    let s3BucketWithConfigDev = 
+      createWebsiteBucketConfig 
+        "dev.l1x.be"        // name
+        "eu-west-1"         // region
+        "prod"              // stage
+        websiteDocuments    // website
+        websiteTags         // tagging
+        None                // policy
+        None                // logging
+
+    createS3Bucket amazonS3client s3BucketWithConfigDev |> ignore
     
     // redirect l1x.be -> dev.l1x.be
 
@@ -49,22 +73,26 @@ module Website =
       { RedirectTo = "dev.l1x.be" }
 
     let s3BucketWithConfigApex = 
-      createRedirectBucketConfig "l1x.be" "eu-west-1" "prod" redirectTo websiteTags None
-    
-    let _ = createS3Bucket amazonS3client s3BucketWithConfigApex 
+      createRedirectBucketConfig 
+        "l1x.be"          // name
+        "eu-west-1"       // region
+        "prod"            // stage
+        redirectTo        // website
+        websiteTags       // tagging
+        None              // policy
+        None              // logging
+   
+    createS3Bucket amazonS3client s3BucketWithConfigApex |> ignore
 
     ()
-    
-    // end 
-  
-  // Get bucket info for show
-  let getS3Buckets (amazonS3client:AmazonS3Client) allowedAwsRegions = 
-    // "dev.l1x.be"
-    // "l1x.be"
+      
+  let getS3Buckets (amazonS3client:AmazonS3Client) = 
+    getS3Bucket amazonS3client "logs.l1x.be" |> ignore
+    getS3Bucket amazonS3client "dev.l1x.be" |> ignore
+    getS3Bucket amazonS3client "l1x.be" |> ignore
     ()
   
-  // Determine 
-  let planS3Buckets (amazonS3client:AmazonS3Client) allowedAwsRegions = 
+  let planS3Buckets (amazonS3client:AmazonS3Client) = 
     ()
 
   // ######################################################################################
@@ -85,11 +113,11 @@ module Website =
 
       match s3ClientMaybe, command with
         | Ok s3Client, "deploy" -> 
-            createS3Buckets s3Client jsonConfig.AllowedAwsRegions
+            createS3Buckets s3Client
         | Ok s3Client, "show" -> 
-            getS3Buckets s3Client jsonConfig.AllowedAwsRegions
+            getS3Buckets s3Client
         | Ok s3Client, "plan" -> 
-            planS3Buckets s3Client jsonConfig.AllowedAwsRegions
+            planS3Buckets s3Client
         | Ok _, _ -> 
             Console.Error.WriteLine("Unsupported command")
             Environment.Exit(1)

@@ -25,19 +25,41 @@ Right now there is no local state but this might change in the future. State mus
 This website uses AWS S3. It only has one stage: prod. The bucket configuration is typed. You cannot accidentally try to create illegal configuration. Possible configurations can be narrowed down by the actual company or department. For example, public buckets can be disabled. Tagging is flexible, you can add more for billing breakdown purposes.
 
 ```Fsharp
+  // Tags
+
     let websiteTags = 
       [   ("Name", "l1x.be");   ("Environment", "website"); 
           ("Scope", "global");  ("Stage", "prod");         ]
 
+    // logs.l1x.be
+
+    let s3BucketWithConfigLogs = 
+      createPrivateBucketConfig 
+        "logs.l1x.be"     // name
+        "eu-west-1"       // region
+        "prod"            // stage
+        websiteTags       // tagging
+        None              // policy
+        None              // logging
+    
+    createS3Bucket amazonS3client s3BucketWithConfigLogs |> ignore
+    
     // dev.l1x.be
 
     let websiteDocuments : WebsiteDocuments = 
-      { IndexDocument = "index.html"; ErrorDocument = "error.html"; }
+      { IndexDocument = "index.html"; ErrorDocument = "error.html"; }  
 
     let s3BucketWithConfigDev = 
-      createWebsiteBucketConfig "dev.l1x.be" "eu-west-1" "prod" websiteDocuments websiteTags
+      createWebsiteBucketConfig 
+        "dev.l1x.be"        // name
+        "eu-west-1"         // region
+        "prod"              // stage
+        websiteDocuments    // website
+        websiteTags         // tagging
+        None                // policy
+        None                // logging
 
-    createS3bucket amazonS3client s3BucketWithConfigDev |> ignore
+    createS3Bucket amazonS3client s3BucketWithConfigDev |> ignore
     
     // redirect l1x.be -> dev.l1x.be
 
@@ -45,11 +67,16 @@ This website uses AWS S3. It only has one stage: prod. The bucket configuration 
       { RedirectTo = "dev.l1x.be" }
 
     let s3BucketWithConfigApex = 
-      createRedirectBucketConfig "l1x.be" "eu-west-1" "prod" redirectTo websiteTags
-    
-    createS3bucket amazonS3client s3BucketWithConfigApex |> ignore
-    
-    // end 
+      createRedirectBucketConfig 
+        "l1x.be"          // name
+        "eu-west-1"       // region
+        "prod"            // stage
+        redirectTo        // website
+        websiteTags       // tagging
+        None              // policy
+        None              // logging
+   
+    createS3Bucket amazonS3client s3BucketWithConfigApex |> ignore
 ```
 
 ## Cloud Resources

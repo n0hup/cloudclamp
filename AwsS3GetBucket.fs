@@ -24,7 +24,6 @@ module AwsS3GetBucket =
       if task.IsCompletedSuccessfully && isHttpSuccess task.Result.HttpStatusCode then
         Some task.Result.Policy      
       else
-        Console.Error.WriteLine("Could not get bucket policy: {0}", bucket)
         None 
     with ex ->
       Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message)
@@ -41,7 +40,6 @@ module AwsS3GetBucket =
       if task.IsCompletedSuccessfully && isHttpSuccess task.Result.HttpStatusCode then
         Some task.Result.WebsiteConfiguration      
       else
-        Console.Error.WriteLine("Could not get bucket website configuration: {0}", bucket)
         None
     with ex ->
       Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message)
@@ -58,7 +56,6 @@ module AwsS3GetBucket =
       if task.IsCompletedSuccessfully && isHttpSuccess task.Result.HttpStatusCode then
         Some task.Result.TagSet
       else
-        Console.Error.WriteLine("Could not get bucket tags or no tags are set: {0}", bucket)
         None
     with ex ->
       Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message)
@@ -75,7 +72,6 @@ module AwsS3GetBucket =
       if task.IsCompletedSuccessfully && isHttpSuccess task.Result.HttpStatusCode then
         Some task.Result.AccessControlList
       else
-        Console.Error.WriteLine("Could not get bucket acl: {0}", bucket)
         None    
     with ex ->
       Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message)
