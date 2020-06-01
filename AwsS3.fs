@@ -19,7 +19,7 @@ open Logging
 
 module AwsS3 =
 
-  let loggerAwsS3 = Logger.CreateLogger("AwsS3")
+  let loggerAwsS3 = Logger.CreateLogger "AwsS3" loggingConfig.LogLevel
 
   let createAwsS3Config awsRegionName =
     try

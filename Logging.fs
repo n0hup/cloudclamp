@@ -1,10 +1,6 @@
 namespace CloudClamp
 
 // external
-open ZeroLog
-open ZeroLog.Appenders
-open ZeroLog.Config
-open System.Collections.Generic
 open System
 open System.IO
 
@@ -12,19 +8,32 @@ open System.IO
 
 module Logging =
 
-  type Logger(name) = 
-    
+
+  type LogLevel = Info | Debug
+
+  type Logger(name, logLevel) = 
+
+    let logLevelActual logLevel =
+      match logLevel with
+      | "info"  -> Info
+      | "debug" -> Debug
+      | _       -> failwith "Not supported loglevel"
+
     let currentTime (tw:TextWriter) = 
-        tw.Write("{0:s}",DateTime.Now)
+      tw.Write("{0:s}",DateTime.Now)
 
     let logEvent level msg = 
-        printfn "%t %s [%s] %s" currentTime level name msg
+      printfn "%t %s [%s] %s" currentTime level name msg
 
     member this.LogInfo msg = 
-        logEvent "INFO" msg
+      logEvent "INFO" msg
 
     member this.LogError msg = 
-        logEvent "ERROR" msg
+      logEvent "ERROR" msg
 
-    static member CreateLogger name = 
-      Logger(name)
+    member this.LogDebug msg =
+      if logLevelActual logLevel = Debug then
+        logEvent "DEBUG" msg
+
+    static member CreateLogger name logLevel= 
+      Logger(name, logLevel)

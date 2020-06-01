@@ -15,7 +15,7 @@ module Website =
 
   // Utils
 
-  let loggerWebsite = Logger.CreateLogger("Website")
+  let loggerWebsite = Logger.CreateLogger "Website" loggingConfig.LogLevel
 
   let awsProfileCredentials (awsProfileName:string) =
     loggerWebsite.LogInfo (String.Format("{0}", awsProfileName))

@@ -5,6 +5,7 @@ open System
 open System.Reflection
 
 // internal
+open Config
 open Cli
 open Stage
 open Command
@@ -12,7 +13,7 @@ open Logging
 
 module Main =
 
-  let loggerMain = Logger.CreateLogger("Main")
+  let loggerMain = Logger.CreateLogger "Main" loggingConfig.LogLevel
 
   let callModuleFunction (moduleName:string) (functionName:string) (stage:string) = 
     let asm = Assembly.GetExecutingAssembly()

@@ -5,6 +5,7 @@ open Amazon.Runtime.CredentialManagement
 open System
 
 // internal
+open Config
 open Logging
 
 module Aws =
@@ -20,7 +21,7 @@ module Aws =
   // To be investigated further
 
 
-  let loggerAws = Logger.CreateLogger("Aws")
+  let loggerAws = Logger.CreateLogger "Aws" loggingConfig.LogLevel
 
   type AwsCredentialsProvider =
     | SharedFile of fileName : Option<string> * profileName : string
