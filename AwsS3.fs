@@ -1,5 +1,6 @@
 namespace CloudClamp
 
+// external
 open Amazon
 open Amazon.S3
 open Amazon.S3.Model
@@ -7,14 +8,18 @@ open Amazon.S3.Util
 open System
 open System.Collections.Generic
 
+// internal
 open Config
 open AwsS3Acl
 open AwsS3GetBucket
 open AwsS3PutBucket
 open AwsS3DeleteBucket
 open AwsS3Printable
+open Logging
 
 module AwsS3 =
+
+  let loggerAwsS3 = Logger.CreateLogger("AwsS3")
 
   let createAwsS3Config awsRegionName =
     try
@@ -24,25 +29,25 @@ module AwsS3 =
       config.RegionEndpoint <- region
       Ok config
     with ex ->
-      Console.Error.WriteLine("{0} : {1}", ex.Message, ex.InnerException.Message);
+      loggerAwsS3.LogError(String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
       Environment.Exit(1);
-      Error (String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+      Error "never reached"
 
   let getAwsS3Client awsCredentials (awsS3Config:AmazonS3Config) =
     try
-      Console.WriteLine("Connecting to S3...")
-      Console.WriteLine(
-        "AWS S3 Config: RegionEndpoint :: {0} MaxConnectionsPerServer :: {1} BufferSize :: {2} ServiceVersion :: {3}",
-        awsS3Config.RegionEndpoint,
-        awsS3Config.MaxConnectionsPerServer,
-        awsS3Config.BufferSize,
-        awsS3Config.ServiceVersion
-      )
+      loggerAwsS3.LogInfo("Connecting to S3...")
+      loggerAwsS3.LogInfo(
+        String.Format(
+          "AWS S3 Config: RegionEndpoint :: {0} MaxConnectionsPerServer :: {1} BufferSize :: {2} ServiceVersion :: {3}",
+          awsS3Config.RegionEndpoint,
+          awsS3Config.MaxConnectionsPerServer,
+          awsS3Config.BufferSize,
+          awsS3Config.ServiceVersion))
       Ok(new AmazonS3Client(awsCredentials, awsS3Config))
     with ex ->
-      Console.Error.WriteLine("Connecting to S3 has failed")
+      loggerAwsS3.LogError("Connecting to S3 has failed")
       let err = String.Format("{0} : {1}", ex.Message, ex.InnerException.Message)
-      Console.Error.WriteLine err
+      loggerAwsS3.LogError(err)
       Error err
 
   let (|AllowedS3Region|_|) (region:string, allowedAwsRegions) =
@@ -84,17 +89,18 @@ module AwsS3 =
   }
 
   type RedirectOnly = {
-    RedirectTo : string
+    RedirectTo  : string;
+    Protocol    : string;
   }
 
   type RedirectOnlyConfig = {
-    Bucket  : string;
-    Acl     : PublicReadAcl;
-    Region  : S3Region;
-    Website : RedirectOnly;
-    Tags    : Option<List<Tag>> ;
-    Policy  : Option<string>;
-    Logging : Option<BucketLoggingConfig>;
+    Bucket      : string;
+    Acl         : PublicReadAcl;
+    Region      : S3Region;
+    Website     : RedirectOnly;
+    Tags        : Option<List<Tag>> ;
+    Policy      : Option<string>;
+    Logging     : Option<BucketLoggingConfig>;
   }
 
   type WebsiteConfig = {
@@ -188,10 +194,10 @@ module AwsS3 =
         else
           NonExistent
       else
-        Console.Error.WriteLine(String.Format("Could not get bucket state: {0}", bucket))
+        loggerAwsS3.LogError(String.Format("Could not get bucket state: {0}", bucket))
         Err
     with ex ->
-      Console.Error.WriteLine(String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
+      loggerAwsS3.LogError(String.Format("{0} : {1}", ex.Message, ex.InnerException.Message))
       Err
 
   let transition (amazonS3client:AmazonS3Client) basicConfig websiteConfig redirectConfig (state:State) (event:Event) =
@@ -256,7 +262,7 @@ module AwsS3 =
             | Some _ -> NonExistent
 
       | _, _, (_), _, _ ->
-        Console.Error.WriteLine("Not implemented State / Event combination")
+        loggerAwsS3.LogError("Not implemented State / Event combination")
         Err
 
   let checkAllowedRegion region allowedAwsRegions =
@@ -264,7 +270,7 @@ module AwsS3 =
       | AllowedS3Region region  -> 
           Some region
       | _ ->
-        Console.Error.WriteLine("Unsupported region: {0}", region);
+        loggerAwsS3.LogError(String.Format("Unsupported region: {0}", region))
         Environment.Exit 1
         None
 
@@ -363,7 +369,7 @@ module AwsS3 =
   
   let createS3Bucket (amazonS3client:AmazonS3Client) (s3BucketConfig:S3BucketConfig) =
     try
-      Console.WriteLine("s3BucketConfig: {0}", getS3BucketConfigString s3BucketConfig)
+      loggerAwsS3.LogInfo(String.Format("s3BucketConfig: {0}", getS3BucketConfigString s3BucketConfig))
       let basicConfig = 
         match s3BucketConfig with 
           | Private config  ->
@@ -389,13 +395,14 @@ module AwsS3 =
               let webSiteConfiguration  = WebsiteConfiguration()     
               let routingRuleRedirect   = RoutingRuleRedirect()
               routingRuleRedirect.HostName                <- config.Website.RedirectTo
+              routingRuleRedirect.Protocol                <- config.Website.Protocol
               webSiteConfiguration.RedirectAllRequestsTo  <- routingRuleRedirect
               Some webSiteConfiguration
           | _               
               ->  None
               
       let currentState = transition amazonS3client basicConfig websiteConfig redirectConfig Initial GetState
-      Console.WriteLine("Current state: {0}", (stateToString currentState))
+      loggerAwsS3.LogError(String.Format("Current state: {0}", (stateToString currentState)))
 
       let (_,_,_, tags, policy) = basicConfig
 
@@ -407,18 +414,18 @@ module AwsS3 =
       
       let events = getEvents currentState (tags, website, policy)
       
-      Console.WriteLine("The following chain of events will be processed: {0}", events)
+      loggerAwsS3.LogInfo(String.Format("The following chain of events will be processed: {0}", events))
 
       let finalState = walkEvents amazonS3client basicConfig websiteConfig redirectConfig currentState events
 
-      Console.WriteLine("Final state: {0}", (stateToString finalState))      
+      loggerAwsS3.LogInfo(String.Format("Final state: {0}", (stateToString finalState)))
 
       finalState     
     with ex ->
-      Console.Error.WriteLine("{0}", ex)
+      loggerAwsS3.LogError(String.Format("{0}", ex))
       Err
 
   let getS3Bucket (amazonS3client:AmazonS3Client) (bucket:string) =
     let currentState = getState amazonS3client bucket
-    Console.WriteLine("Current state: {0}", (stateToString currentState))
+    loggerAwsS3.LogInfo(String.Format("Current state: {0}", (stateToString currentState)))
     currentState

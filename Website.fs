@@ -2,7 +2,6 @@ namespace CloudClamp
 
 // external
 open Amazon.S3
-open Amazon.S3.Model
 open System
 
 // internal
@@ -16,7 +15,10 @@ module Website =
 
   // Utils
 
+  let loggerWebsite = Logger.CreateLogger("Website")
+
   let awsProfileCredentials (awsProfileName:string) =
+    loggerWebsite.LogInfo (String.Format("{0}", awsProfileName))
     getAwsCredentials (SharedFile(fileName = None, profileName = awsProfileName))
 
   let createS3Client awsRegion awsProfileName =
@@ -70,7 +72,7 @@ module Website =
     // redirect l1x.be -> dev.l1x.be
 
     let redirectTo : RedirectOnly = 
-      { RedirectTo = "dev.l1x.be" }
+      { RedirectTo = "dev.l1x.be"; Protocol = "https" }
 
     let s3BucketWithConfigApex = 
       createRedirectBucketConfig 
@@ -101,14 +103,17 @@ module Website =
 
   let executeCommand command stage =
     
+    
+    loggerWebsite.LogInfo(String.Format("{0} :: {1}", command, stage))
+    
     if stage = "prod" then
-
-      Console.WriteLine("Deploying serive: Website stage: prod")
 
       let jsonConfig      = jsonConfig "prod"
       let awsRegion       = jsonConfig.AwsRegion
       let awsProfileName  = jsonConfig.AwsProfileName
 
+      loggerWebsite.LogInfo(String.Format("awsRegion: {0} :: awsProfileName: {1}", awsRegion, awsProfileName))
+      
       let s3ClientMaybe = createS3Client awsRegion awsProfileName
 
       match s3ClientMaybe, command with
@@ -118,15 +123,18 @@ module Website =
             getS3Buckets s3Client
         | Ok s3Client, "plan" -> 
             planS3Buckets s3Client
-        | Ok _, _ -> 
-            Console.Error.WriteLine("Unsupported command")
+        | Ok _, command -> 
+            loggerWebsite.LogError(String.Format("Unsupported command: {0}", command))
             Environment.Exit(1)
         | Error err, _ -> 
-            Console.Error.WriteLine("{0}", err)
+            loggerWebsite.LogError(String.Format("{0}", err))
             Environment.Exit(1)
     else
-      Console.Error.WriteLine("The only supported stage is prod for Website")
+      loggerWebsite.LogError("The only supported stage is prod for Website")
       Environment.Exit(1)
+
+  let list (stage:string) =
+    executeCommand "list" stage
 
   let show (stage:string) = 
     executeCommand "show" stage
@@ -136,3 +144,6 @@ module Website =
     
   let deploy (stage:string) =
     executeCommand "deploy" stage
+  
+  let refresh (stage:string) =
+    executeCommand "refresh" stage

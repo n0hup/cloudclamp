@@ -6,13 +6,14 @@ namespace CloudClamp
 
 module Command =    
 
-  type Command = Plan | Deploy | Show
+  type Command = Plan | Deploy | Show | Refresh
 
   let fromStringToCommand (s:string) : Result<Command,string> =
     match s with
-      | "plan"     -> Ok Plan
-      | "deploy"   -> Ok Deploy
-      | "show"     -> Ok Show
+      | "plan"    -> Ok Plan
+      | "deploy"  -> Ok Deploy
+      | "show"    -> Ok Show     
+      | "refresh" -> Ok Refresh
       | _         -> Error "Unsupported command"
 
   let fromCommandToString (s:Command) : string =
@@ -20,3 +21,4 @@ module Command =
       | Plan      -> "plan"
       | Deploy    -> "deploy"
       | Show      -> "show"
+      | Refresh   -> "refresh"

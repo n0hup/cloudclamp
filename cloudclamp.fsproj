@@ -18,7 +18,10 @@
     <Compile Include="Cli.fs"               />
     <Compile Include="HttpStatus.fs"        />
 
+    <Compile Include="Resource.fs"               />
+    
     <Compile Include="Aws.fs"               />
+
     <Compile Include="AwsS3Acl.fs"          />
     <Compile Include="AwsS3Printable.fs"    />
     <Compile Include="AwsS3GetBucket.fs"    />        
@@ -26,6 +29,10 @@
     <Compile Include="AwsS3DeleteBucket.fs" />
     <Compile Include="AwsS3.fs"             />
     
+    <Compile Include="AwsRoute53GetZone.fs" />
+    <Compile Include="AwsRoute53.fs"        />
+
+    <Compile Include="Dns.fs"           />
     <Compile Include="Website.fs"           />
     <Compile Include="Main.fs"              />
     <None Include="config.*.json">
@@ -35,9 +42,9 @@
   </ItemGroup>
 
  <ItemGroup>
-    <PackageReference Include="ZeroLog"     Version="1.4.3"       />
-    <PackageReference Include="AWSSDK.S3"   Version="3.5.0-beta"  />
-    <PackageReference Include="FSharp.Data" Version="3.3.3"       />
+    <PackageReference Include="AWSSDK.S3"       Version="3.5.0-beta"  />
+    <PackageReference Include="AWSSDK.Route53"  Version="3.5.0-beta"  />
+    <PackageReference Include="FSharp.Data"     Version="3.3.3"       />
   </ItemGroup>
 
 </Project>  
