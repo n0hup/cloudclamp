@@ -18,7 +18,7 @@
     <Compile Include="Cli.fs"               />
     <Compile Include="HttpStatus.fs"        />
 
-    <Compile Include="Resource.fs"               />
+    <Compile Include="Stack.fs"             />
     
     <Compile Include="Aws.fs"               />
 

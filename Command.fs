@@ -6,19 +6,21 @@ namespace CloudClamp
 
 module Command =    
 
-  type Command = Plan | Deploy | Show | Refresh
+  type Command = ShowStack | RefreshState | DeployStack | DestroyStack | ImportResource
 
   let fromStringToCommand (s:string) : Result<Command,string> =
     match s with
-      | "plan"    -> Ok Plan
-      | "deploy"  -> Ok Deploy
-      | "show"    -> Ok Show     
-      | "refresh" -> Ok Refresh
-      | _         -> Error "Unsupported command"
+      | "show-stack"        -> Ok ShowStack
+      | "refresh-state"     -> Ok RefreshState
+      | "deploy-stack"      -> Ok DeployStack
+      | "destroy-stack"     -> Ok DestroyStack
+      | "import-resource"   -> Ok ImportResource
+      | _                   -> Error "Unsupported command"
 
-  let fromCommandToString (s:Command) : string =
+  let fromCommandToMethodName (s:Command) : string =
     match s with
-      | Plan      -> "plan"
-      | Deploy    -> "deploy"
-      | Show      -> "show"
-      | Refresh   -> "refresh"
+      | ShowStack       -> "showStack"
+      | RefreshState    -> "refreshState"
+      | DeployStack     -> "deployStack"
+      | DestroyStack    -> "destroyStack"
+      | ImportResource  -> "importResource"

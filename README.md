@@ -4,18 +4,26 @@ Type safe infrastructure as code with the full power of F#.
 
 ## Why?
 
-I am tired of dealing with configuration files and interpreters that has the expresiveness of Go, safetiness of C and performance of Ruby. Illegal configuration must be made impossible by the type system. ADTs are great for this. Compilation has to check as much as possible and using all language features is a must. C# has libraries for pretty much every single vendor out there or it is trivial to implement the lacking support. There is a giant community of senior software engineers available on StackOverflow or LinkedIN. Debugging and performance tracing is largely solved.
+I would like to have a type safe, true infrastrcture as code library that does not store most of the configuration in config files like JSON or HCL but uses the full power of a programming language to achieve the maximum level of automation.
 
 ## Usage
 
 CloudClamp has 3 concepts:
 
-- service (website, hadoop, etcd, yourcustomservice)
+- stack: website, hadoop, etcd, yourcustomservice
+- resource: dns, ssl certificate, server
 - stage (dev, qa, prod, etc.)
-- command (show, plan, deploy)
+
+There are few commands to interact with the infrastructure:
+
+```fsharp
+type Command = ShowStack | RefreshState | DeployStack | DestroyStack | ImportResource
+```
+
+Maybe it is a good idea to separate out deploy and create?
 
 ```bash
-cloudclamp --stage prod --command deploy --service CloudClamp.Website
+cloudclamp --stage prod --command deploy-stack --stack CloudClamp.Website
 ```
 
 Right now there is no local state but this might change in the future. State must be per service/stage to avoid deployments blocking each other. There is a small amount of configuration in JSON (type safe) to configure basic things. More complex things live in code.

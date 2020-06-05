@@ -10,6 +10,7 @@ open AwsS3
 open Config
 open Logging
 open Utils
+open System.IO
 
 module Website =
 
@@ -25,6 +26,13 @@ module Website =
     getAwsS3Client 
       (getOkValue (awsProfileCredentials awsProfileName)) 
       (getOkValue (createAwsS3Config awsRegion))
+
+  let getAwsDetails (stage:string) =
+    let config          = jsonConfig "prod"
+    let awsRegion       = config.AwsRegion
+    let awsProfileName  = config.AwsProfileName
+    loggerWebsite.LogInfo(sprintf "awsRegion: %A :: awsProfileName: %A" awsRegion awsProfileName)
+    (awsRegion, awsProfileName)
 
   // Create
 
@@ -85,16 +93,96 @@ module Website =
         None              // logging
    
     createS3Bucket amazonS3client s3BucketWithConfigApex |> ignore
+    ()
 
-    ()
-      
-  let getS3Buckets (amazonS3client:AmazonS3Client) = 
-    getS3Bucket amazonS3client "logs.l1x.be" |> ignore
-    getS3Bucket amazonS3client "dev.l1x.be" |> ignore
-    getS3Bucket amazonS3client "l1x.be" |> ignore
-    ()
-  
-  let planS3Buckets (amazonS3client:AmazonS3Client) = 
+  type AliasTarget = {
+    DNSName: string
+    EvaluateTargetHealth: Boolean
+    HostedZoneId: string
+  }
+
+  type ResourceRecordType = 
+    A | AAAA | CNAME | DNSKEY | MX | NS | PTR | RRSIG | SOA | TXT 
+
+  type ResourceRecord = {
+    Value: string
+  }
+
+  type ResourceRecordSet = {
+    Name            : string
+    ResourceRecords : List<ResourceRecord>
+    TTL             : Option<int32>
+    Type            : ResourceRecordType
+    AliasTarget     : Option<AliasTarget>
+  }
+
+  type Dns = {
+    Id                  : string
+    ResourceRecordSets  : List<ResourceRecordSet>
+  }
+
+  let rr (str) : ResourceRecord = 
+    { Value= str }
+
+  type Certificate = {
+    Id  : string
+  }
+
+  type Bucket = {
+    Name : string
+  }
+
+  type Stack = {
+      Dns         : Dns
+      // Certificate : Certificate
+      // Bucket      : Bucket
+  }
+
+  let dns =    
+    let ns : ResourceRecordSet  = {
+        Name            = "l1x.be." 
+        ResourceRecords = [
+          { Value = "ns-583.awsdns-08.net."    };
+          { Value = "ns-504.awsdns-63.com."    };
+          { Value = "ns-1708.awsdns-21.co.uk." };
+          { Value = "ns-1176.awsdns-19.org."   };
+        ]
+        Type            = NS
+        TTL             = Some 172800
+        AliasTarget     = None
+      }
+    
+    let soa : ResourceRecordSet = {
+      Name            = "l1x.be." 
+      ResourceRecords = [
+        { Value = "ns-583.awsdns-08.net. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400" };
+      ]
+      Type            = SOA
+      TTL             = Some 900
+      AliasTarget     = None
+    }
+
+    let resourceRecordSets = [ns; soa;] 
+    { Id = "/hostedzone/Z04374393O7HMC10LT1Q2"; ResourceRecordSets = resourceRecordSets} 
+
+  let stack () =
+    let ns : ResourceRecordSet  = {
+        Name            = "l1x.be." 
+        ResourceRecords = [{Value = "ns-583.awsdns-08.net."}]
+        Type            = NS
+        TTL             = Some 172800
+        AliasTarget     = None
+      }
+    let resourceRecordSets = [ns]
+    let dns : Dns = 
+      { Id = "/hostedzone/Z04374393O7HMC10LT1Q2"; ResourceRecordSets = resourceRecordSets}
+    
+    {Dns = dns;}
+
+  let showStack stage awsRegion awsProfileName =
+    
+    let state = File.ReadAllLines(Path.Combine("state", stage, "website.yaml"))
+
     ()
 
   // ######################################################################################
@@ -102,48 +190,27 @@ module Website =
   // ######################################################################################
 
   let executeCommand command stage =
-    
-    
-    loggerWebsite.LogInfo(String.Format("{0} :: {1}", command, stage))
-    
-    if stage = "prod" then
-
-      let jsonConfig      = jsonConfig "prod"
-      let awsRegion       = jsonConfig.AwsRegion
-      let awsProfileName  = jsonConfig.AwsProfileName
-
-      loggerWebsite.LogInfo(String.Format("awsRegion: {0} :: awsProfileName: {1}", awsRegion, awsProfileName))
       
-      let s3ClientMaybe = createS3Client awsRegion awsProfileName
+    loggerWebsite.LogInfo(String.Format("{0} :: {1}", command, stage)) 
 
-      match s3ClientMaybe, command with
-        | Ok s3Client, "deploy" -> 
-            createS3Buckets s3Client
-        | Ok s3Client, "show" -> 
-            getS3Buckets s3Client
-        | Ok s3Client, "plan" -> 
-            planS3Buckets s3Client
-        | Ok _, command -> 
-            loggerWebsite.LogError(String.Format("Unsupported command: {0}", command))
-            Environment.Exit(1)
-        | Error err, _ -> 
-            loggerWebsite.LogError(String.Format("{0}", err))
-            Environment.Exit(1)
-    else
-      loggerWebsite.LogError("The only supported stage is prod for Website")
-      Environment.Exit(1)
+    match command, stage with
+      | "showStack", "prod" ->
+          let (awsRegion, awsProfileName) = getAwsDetails "prod"
+          showStack "prod"
+          ()
+      | "refreshState", "prod" ->
+          let (awsRegion, awsProfileName) = getAwsDetails "prod"
+          ()
+      | "deployStack", "prod" -> 
+          let (awsRegion, awsProfileName) = getAwsDetails "prod"
+          ()
+      | "importResource", "prod" ->
+          let (awsRegion, awsProfileName) = getAwsDetails "prod"
+          ()
+      | "destroyStack", _ ->
+          loggerWebsite.LogError("destroyStack is not allowed for this stack")
+      | command, stage ->
+          loggerWebsite.LogError( sprintf "Unsupported command %A and stage %A" command stage)
+          Environment.Exit(1)
 
-  let list (stage:string) =
-    executeCommand "list" stage
-
-  let show (stage:string) = 
-    executeCommand "show" stage
-    
-  let plan (stage:string) =
-    executeCommand "plan" stage
-    
-  let deploy (stage:string) =
-    executeCommand "deploy" stage
   
-  let refresh (stage:string) =
-    executeCommand "refresh" stage

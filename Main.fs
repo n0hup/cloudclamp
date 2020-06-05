@@ -15,13 +15,13 @@ module Main =
 
   let loggerMain = Logger.CreateLogger "Main" loggingConfig.LogLevel
 
-  let callModuleFunction (moduleName:string) (functionName:string) (stage:string) = 
+  let callModuleFunction (moduleName:string) (functionName:string) (command:string) (stage:string) = 
     let asm = Assembly.GetExecutingAssembly()
     for t in asm.GetTypes() do
       for m in t.GetMethods() do
         if t.FullName = moduleName && m.IsStatic && m.Name = functionName then 
-          loggerMain.LogInfo(String.Format("Invoking: {0}.{1}", t.FullName, m.Name))
-          m.Invoke(null, [|stage|]) |> ignore
+          loggerMain.LogInfo(sprintf "Invoking: %A.%A" t.FullName m.Name)
+          m.Invoke(null, [|command;stage|]) |> ignore
 
   [<EntryPoint>]
   let main argv =
@@ -31,12 +31,13 @@ module Main =
     let commandLineArgumentsParsed = parseCommandLine (Array.toList argv)
        
     let stage = fromStageToString commandLineArgumentsParsed.Stage
-    let command = fromCommandToString commandLineArgumentsParsed.Command
-
-    if commandLineArgumentsParsed.Service = "noop" then
-      callModuleFunction "CloudClamp.Website" "show" "prod"
+    let command = fromCommandToMethodName commandLineArgumentsParsed.Command
+ 
+    if commandLineArgumentsParsed.Stack = "noop" then
+      callModuleFunction "CloudClamp.Website" "executeCommand" "show-stack" "prod"
     else
-      callModuleFunction commandLineArgumentsParsed.Service command stage 
+      loggerMain.LogInfo(sprintf "%A %A %A %A" commandLineArgumentsParsed.Stack "executeCommand" command stage)
+      callModuleFunction commandLineArgumentsParsed.Stack "executeCommand" command stage 
 
     //return
     0
