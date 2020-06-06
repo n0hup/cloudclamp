@@ -13,32 +13,24 @@
     <Compile Include="Config.fs"            />
     <Compile Include="Logging.fs"           />
     <Compile Include="Utils.fs"             />
-    <Compile Include="Stage.fs"             />  
-    <Compile Include="Command.fs"           />
-    <Compile Include="Cli.fs"               />
-    <Compile Include="HttpStatus.fs"        />
 
-    <Compile Include="Stack.fs"             />
-    
-    <Compile Include="Aws.fs"               />
+    <!-- Cli -->
+    <Compile Include="Cli\Stage.fs"         />  
+    <Compile Include="Cli\Command.fs"       />
+    <Compile Include="Cli\Cli.fs"           />
 
     <!-- Aws.S3 -->
-    <Compile Include="AwsS3Acl.fs"          />
-    <Compile Include="AwsS3Printable.fs"    />
-    <Compile Include="AwsS3GetBucket.fs"    />        
-    <Compile Include="AwsS3PutBucket.fs"    />
-    <Compile Include="AwsS3DeleteBucket.fs" />
-    <Compile Include="AwsS3.fs"             />
-    <Compile Include="AwsS3Resource.fs"     />
+    <Compile Include="Aws\AwsS3Resource.fs"       />
+    
     <!-- Aws.Route53 -->
-    <Compile Include="AwsRoute53GetZone.fs" />
-    <Compile Include="AwsRoute53.fs"        />
+    <Compile Include="Aws\AwsRoute53Resource.fs"  />
     
     <!-- CC.Blog* etc -->
     <Compile Include="BlogStack.fs"         />
-    <Compile Include="Dns.fs"               />
-    <Compile Include="Website.fs"           />
+    
+    <!-- Main -->
     <Compile Include="Main.fs"              />
+
     <None Include="config.*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

@@ -24,7 +24,7 @@ module BlogStack =
 
   } 
 
-  type Stack = {
+  type BlogStack = {
     Dns         : List<DnsResource>
     Certificate : List<CertificateResource>
     Bucket      : List<BucketResource>
