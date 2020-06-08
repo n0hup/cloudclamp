@@ -18,7 +18,7 @@ module Cli =
     Regex(@"^[a-zA-Z0-9-_\.]+$").Match(s).Success
 
   // --stage qa --service hadoop --command deploy
-  
+
   [<StructuredFormatDisplay("Stage {Stage} :: Command {Command} :: DryRun {DryRun} :: Stack {Stack}")>]
   type CommandLineOptions = {
     Stage   : Stage;
@@ -26,27 +26,27 @@ module Cli =
     DryRun  : Boolean;
     Stack   : string;
   }
-  
-  
+
+
   // create the "helper" recursive function
-  let rec parseCommandLineRec args optionsSoFar =       
+  let rec parseCommandLineRec args optionsSoFar =
       //loggerCli.LogInfo(args)
-      match args with 
+      match args with
       // empty list means we're done.
       | [] ->
           loggerCli.LogInfo(sprintf "optionsSoFar %A" optionsSoFar)
-          optionsSoFar  
+          optionsSoFar
 
       // match stage flag
-      | "--stage"::xs -> 
+      | "--stage"::xs ->
         match xs with
           | stageString::xss ->
             match fromStringToStage stageString with
-              | Ok stage -> 
+              | Ok stage ->
                   parseCommandLineRec xss { optionsSoFar with Stage=stage}
-              | Error err -> 
+              | Error err ->
                   loggerCli.LogError(String.Format("Unsupported stage: {0}", stageString))
-                  Environment.Exit 1 
+                  Environment.Exit 1
                   parseCommandLineRec xss optionsSoFar // never reach
           | [] ->
             loggerCli.LogError(String.Format("Stage cannot be empty"))
@@ -54,15 +54,15 @@ module Cli =
             parseCommandLineRec xs optionsSoFar // never reach
 
       // match command flag
-      | "--command"::xs -> 
+      | "--command"::xs ->
         match xs with
           | commandString::xss ->
             match fromStringToCommand commandString with
-              | Ok command -> 
+              | Ok command ->
                   parseCommandLineRec xss { optionsSoFar with Command=command}
               | Error _err ->
                   loggerCli.LogError(String.Format("Unsupported command: {0}", commandString))
-                  Environment.Exit 1 
+                  Environment.Exit 1
                   parseCommandLineRec xss optionsSoFar // never reach
           | [] ->
             loggerCli.LogError(String.Format("Command cannot be empty"))
@@ -70,17 +70,17 @@ module Cli =
             parseCommandLineRec xs optionsSoFar // never reach
 
       // match command flag
-      | "--dry-run"::xs -> 
+      | "--dry-run"::xs ->
         match xs with
           | dryRunString::xss ->
             match dryRunString with
-              | "yes" -> 
+              | "yes" ->
                   parseCommandLineRec xss { optionsSoFar with DryRun=true}
-              | "no" -> 
+              | "no" ->
                   parseCommandLineRec xss { optionsSoFar with DryRun=false}
               | _ ->
                   loggerCli.LogError(String.Format("Unsupported dry-run: {0}", dryRunString))
-                  Environment.Exit 1 
+                  Environment.Exit 1
                   parseCommandLineRec xss optionsSoFar // never reach
           | [] ->
             loggerCli.LogError(String.Format("DryRun cannot be empty"))
@@ -88,27 +88,27 @@ module Cli =
             parseCommandLineRec xs optionsSoFar // never reach
 
       // match stack flag - this must be in last position, free text
-      | "--stack"::xs -> 
+      | "--stack"::xs ->
         match xs with
           | stackString::xss ->
             match isValidStackName stackString with
-              | true -> 
+              | true ->
                   parseCommandLineRec xss { optionsSoFar with Stack=stackString}
-              | false -> 
+              | false ->
                   loggerCli.LogError(String.Format("Unsupported stack name: {0}", stackString))
-                  Environment.Exit 1 
+                  Environment.Exit 1
                   parseCommandLineRec xss optionsSoFar // never reach
           | [] ->
             loggerCli.LogError(String.Format("Stack cannot be empty"))
             Environment.Exit 1
             parseCommandLineRec xs optionsSoFar // never reach
       // handle unrecognized option and keep looping
-      | x::xs -> 
+      | x::xs ->
           loggerCli.LogError(String.Format("Option {0} is unrecognized", x))
-          parseCommandLineRec xs optionsSoFar 
+          parseCommandLineRec xs optionsSoFar
 
   // create the "public" parse function
-  let parseCommandLine args = 
+  let parseCommandLine args =
     // create the defaults
     let defaultOptions = {
       Stage = Dev;

@@ -8,12 +8,12 @@ module AwsS3Resource =
 
   //
   // BucketAccelerateConfiguration
-  //  
+  //
 
   type BucketAccelerateConfiguration = {
     Name : string
   }
-  
+
   //
   // BucketAcl
   //
@@ -23,7 +23,7 @@ module AwsS3Resource =
     ID          : string
   }
 
-  type Permission = FullControl | Read 
+  type Permission = FullControl | Read
 
   type GranteeType = CanonicalUser | Group
 
@@ -82,7 +82,7 @@ module AwsS3Resource =
   type BucketLifecycleConfiguration = {
     Name : string
   }
-  
+
   //
   // BucketLocation
   //
@@ -93,7 +93,7 @@ module AwsS3Resource =
 
   //
   // BucketLogging
-  // 
+  //
 
   type BucketLogging = {
     TargetBucket : string
@@ -102,7 +102,7 @@ module AwsS3Resource =
 
   //
   // BucketMetricsConfiguration
-  // 
+  //
 
   type BucketMetricsConfiguration = {
     Name : string
@@ -110,8 +110,8 @@ module AwsS3Resource =
 
   //
   // BucketNotificationConfiguration
-  //  
-  
+  //
+
   type BucketNotificationConfiguration = {
     Name : string
   }
@@ -173,7 +173,7 @@ module AwsS3Resource =
   // BucketWebsite
   //
 
-  type Website = 
+  type Website =
     | Documents of IndexDocument : string * ErrorDocument : string
     | Redirect of RedirectAllRequestsTo : string
 
@@ -187,4 +187,15 @@ module AwsS3Resource =
 
   type BucketPublicAccessBlock = {
     Name : string
+  }
+
+
+  type BucketResource = {
+    Name      : string
+    Location  : BucketLocation
+    Acl       : BucketAcl
+    Tagging   : BucketTagging
+    Policy    : Option<BucketPolicy>
+    Logging   : Option<BucketLogging>
+    Website   : Option<BucketWebsite>
   }
