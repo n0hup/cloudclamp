@@ -21,7 +21,8 @@ module AwsRoute53Resource =
     | Record of Name : string * Type : ResourceRecordType *  ResourceRecords : List<string> * TTL : uint32
 
   type DnsResource = {
-    HostedZoneId       : string
+    Name               : string
+    HostedZoneId       : Option<string>
     ResourceRecordSets : List<ResourceRecordSet>
   }
 

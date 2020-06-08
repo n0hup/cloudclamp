@@ -62,12 +62,52 @@ module Blog =
     );
   ]
 
+  let dnsResource =
+    { Name = "l1x.be"; HostedZoneId = None; ResourceRecordSets = resourceRecordSets }
+
+
+  let nemtudmmi (dnsResource:DnsResource) =
+    """
+        - HostedZoneId: /hostedzone/Z04374393O7HMC10LT1Q2
+      Name: l1x.be.
+      ResourceRecordSets:
+        - Name: l1x.be.
+          ResourceRecords:
+            - Value: ns-583.awsdns-08.net.
+            - Value: ns-504.awsdns-63.com.
+            - Value: ns-1708.awsdns-21.co.uk.
+            - Value: ns-1176.awsdns-19.org.
+          TTL: 172800
+          Type: NS
+        - Name: l1x.be.
+          ResourceRecords:
+            - Value: ns-583.awsdns-08.net. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400
+          TTL: 900
+          Type: SOA
+        - AliasTarget:
+            DNSName: dbrgct5gwrbsd.cloudfront.net.
+            EvaluateTargetHealth: false
+            HostedZoneId: Z2FDTNDATAQYW2
+          Name: dev.l1x.be.
+          Type: A
+        - AliasTarget:
+            DNSName: dbrgct5gwrbsd.cloudfront.net.
+            EvaluateTargetHealth: false
+            HostedZoneId: Z2FDTNDATAQYW2
+          Name: dev.l1x.be.
+          Type: AAAA
+        - Name: _0a772de2cfcacc285d64f76d53afb931.dev.l1x.be.
+          ResourceRecords:
+            - Value: _031a48dd8cb38a7723ba15eeef0ae2b2.tfmgdnztqk.acm-validations.aws.
+          TTL: 300
+          Type: CNAME
+    """
+
   let executeCommand command stage =
     let log = sprintf "command: %s stage: %s" command stage
     loggerBlog.LogInfo log
 
-  // let blog : Blog =
-  //   { Dns = dns }
+
 
 
 // "module": "module.aws-acm-certs-trck-dev",
