@@ -1,14 +1,13 @@
 namespace CloudClamp
 
 // external
-// open Newtonsoft.Json
-open Thoth.Json
+
 
 // internal
 open AwsRoute53Resource
 open Logging
 open Config
-open System.IO
+open Fleece.SystemTextJson
 
 module Blog =
 
@@ -61,26 +60,22 @@ module Blog =
   let dnsResource =
     { Name = "l1x.be"; HostedZoneId = None; ResourceRecordSets = resourceRecordSets }
 
-  type Blog = {
-    DnsZones  : List<AwsRoute53Resource.DnsResource>
-  }
+  type Blog =
+    {
+      DnsZones  : List<AwsRoute53Resource.DnsResource>
+    }
 
   let blog : Blog =
     {
       DnsZones = [dnsResource]
     }
 
-  // type BlogState =
-  //   JsonProvider<"state/prod/blog.json">
-
-  // let blogState (stage:string) =
-  //   BlogState.Parse(File.ReadAllText(sprintf "state/%s/blog.json" stage))
-
   let executeCommand command stage =
     let log = sprintf "command: %s stage: %s" command stage
-    // let options = JsonSerializerOptions()
-    // options.Converters.Add(JsonFSharpConverter())
-    // let soap = JsonSerializer.Serialize(soa, options)
+    let outp = aliasTargetToJSON { DNSName = "dbrgct5gwrbsd.cloudfront.net."; EvaluateTargetHealth = false; HostedZoneId = "Z2FDTNDATAQYW2"}
+    loggerBlog.LogInfo outp
+    let aliasJson = """{"DNSName":"dbrgct5gwrbsd.cloudfront.net.","EvaluateTargetHealth":false,"HostedZoneId":"Z2FDTNDATAQYW2"}"""
+    let alias : AliasTarget ParseResult = parseJson aliasJson
+    loggerBlog.LogInfo (sprintf "%A" alias)
     loggerBlog.LogInfo log
-    // loggerBlog.LogInfo (sprintf "%A" soap)
 
