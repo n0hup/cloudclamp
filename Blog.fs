@@ -1,12 +1,12 @@
 namespace CloudClamp
 
 // external
-
+open Thoth.Json.Net
 // internal
 open AwsRoute53Resource
 open Logging
 open Config
-open Fleece.SystemTextJson
+
 
 module Blog =
 
@@ -83,31 +83,20 @@ module Blog =
 
   let executeCommand command stage =
     let log = sprintf "command: %s stage: %s" command stage
-    // let outp = aliasTargetToJSON {
-    //   DNSName = "dbrgct5gwrbsd.cloudfront.net.";
-    //   EvaluateTargetHealth = false;
-    //   HostedZoneId = "Z2FDTNDATAQYW2" }
-    // loggerBlog.LogInfo outp
-    // let aliasJson =
-    //   """{"DNSName":"dbrgct5gwrbsd.cloudfront.net.","EvaluateTargetHealth":false,"HostedZoneId":"Z2FDTNDATAQYW2"}"""
-    // let alias : AliasTarget ParseResult = parseJson aliasJson
-    // // loggerBlog.LogInfo (sprintf "%A" alias)s
-    // let a : ResourceRecordsOrAlias =
-    //   AliasTarget
-    //     { DNSName = "dbrgct5gwrbsd.cloudfront.net.";
-    //     EvaluateTargetHealth = false;
-    //     HostedZoneId = "Z2FDTNDATAQYW2" }
-    // printfn "%s" (string (toJson a))
-    // let b : ResourceRecordsOrAlias =
-    //   ResourceRecords [{ Value = "_031a48dd8cb38a7723ba15eeef0ae2b2.tfmgdnztqk.acm-validations.aws."}]
-
-    let lofasz =
-      [ AliasTarget
-          { DNSName = "dbrgct5gwrbsd.cloudfront.net.";
-          EvaluateTargetHealth = false;
-          HostedZoneId = "Z2FDTNDATAQYW2" }
-        ResourceRecords [{ Value = "_031a48dd8cb38a7723ba15eeef0ae2b2.tfmgdnztqk.acm-validations.aws."}]
-      ]
-    printfn "%s" (string (toJson lofasz))
     loggerBlog.LogInfo log
+
+    let a : ResourceRecordType = A
+
+    let ason = ResourceRecordType.Encoder a
+
+    loggerBlog.LogInfo (sprintf "%A" ason)
+
+    let bson = """{ "type": "A" }"""
+
+    let b = Decode.fromString ResourceRecordType.Decoder bson
+
+    loggerBlog.LogInfo (sprintf "%A" b)
+
+
+
 
