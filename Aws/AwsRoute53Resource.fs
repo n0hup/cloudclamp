@@ -71,7 +71,8 @@ module AwsRoute53Resource =
       | SOA     -> JString "SOA"
       | TXT     -> JString "TXT"
 
-  let colorCodec = resourceRecordTypeDecoder, resourceRecordTypeEncoder
+  let resourceRecordTypeCodec =
+    resourceRecordTypeDecoder, resourceRecordTypeEncoder
 
   type ResourceRecordSet =
     | Alias of

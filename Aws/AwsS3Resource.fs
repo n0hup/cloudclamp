@@ -174,8 +174,11 @@ module AwsS3Resource =
   //
 
   type Website =
-    | Documents of IndexDocument : string * ErrorDocument : string
-    | Redirect of RedirectAllRequestsTo : string
+    | Documents of
+        IndexDocument : string *
+        ErrorDocument : string
+    | Redirect of
+        RedirectAllRequestsTo : string
 
   type BucketWebsite = {
     Website : Website

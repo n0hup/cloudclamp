@@ -2,7 +2,6 @@ namespace CloudClamp
 
 // external
 
-
 // internal
 open AwsRoute53Resource
 open Logging
@@ -72,9 +71,13 @@ module Blog =
 
   let executeCommand command stage =
     let log = sprintf "command: %s stage: %s" command stage
-    let outp = aliasTargetToJSON { DNSName = "dbrgct5gwrbsd.cloudfront.net."; EvaluateTargetHealth = false; HostedZoneId = "Z2FDTNDATAQYW2"}
+    let outp = aliasTargetToJSON {
+      DNSName = "dbrgct5gwrbsd.cloudfront.net.";
+      EvaluateTargetHealth = false;
+      HostedZoneId = "Z2FDTNDATAQYW2" }
     loggerBlog.LogInfo outp
-    let aliasJson = """{"DNSName":"dbrgct5gwrbsd.cloudfront.net.","EvaluateTargetHealth":false,"HostedZoneId":"Z2FDTNDATAQYW2"}"""
+    let aliasJson =
+      """{"DNSName":"dbrgct5gwrbsd.cloudfront.net.","EvaluateTargetHealth":false,"HostedZoneId":"Z2FDTNDATAQYW2"}"""
     let alias : AliasTarget ParseResult = parseJson aliasJson
     loggerBlog.LogInfo (sprintf "%A" alias)
     loggerBlog.LogInfo log
