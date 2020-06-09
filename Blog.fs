@@ -1,11 +1,11 @@
 namespace CloudClamp
 
 // external
-open Thoth.Json.Net
 // internal
 open AwsRoute53Resource
 open Logging
 open Config
+open Fleece.SystemTextJson
 
 
 module Blog =
@@ -79,23 +79,12 @@ module Blog =
       DnsZones = [dnsResource]
     }
 
-
-
   let executeCommand command stage =
     let log = sprintf "command: %s stage: %s" command stage
     loggerBlog.LogInfo log
+    let lofasz = (sprintf "%s" (string (toJson ns)))
+    loggerBlog.LogInfo (sprintf "%A" lofasz)
 
-    let a : ResourceRecordType = A
-
-    let ason = ResourceRecordType.Encoder a
-
-    loggerBlog.LogInfo (sprintf "%A" ason)
-
-    let bson = """{ "type": "A" }"""
-
-    let b = Decode.fromString ResourceRecordType.Decoder bson
-
-    loggerBlog.LogInfo (sprintf "%A" b)
 
 
 
