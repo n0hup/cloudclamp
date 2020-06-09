@@ -82,7 +82,7 @@ module Blog =
   let executeCommand command stage =
     let log = sprintf "command: %s stage: %s" command stage
     loggerBlog.LogInfo log
-    let lofasz = (sprintf "%s" (string (toJson ns)))
+    let lofasz = (sprintf "%s" (string (toJson dnsResource)))
     loggerBlog.LogInfo (sprintf "%A" lofasz)
 
 

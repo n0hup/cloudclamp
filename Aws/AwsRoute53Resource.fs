@@ -72,3 +72,8 @@ module AwsRoute53Resource =
       HostedZoneId       : Option<string>
       ResourceRecordSets : List<ResourceRecordSet>
     }
+    static member JsonObjCodec =
+      fun n h r -> { Name = n; HostedZoneId = h; ResourceRecordSets = r}
+      <!> jreq "Name"               (fun n  -> Some n.Name)
+      <*> jopt "HostedZoneId"       (fun h  -> h.HostedZoneId)
+      <*> jreq "ResourceRecordSets" (fun r  -> Some r.ResourceRecordSets)
