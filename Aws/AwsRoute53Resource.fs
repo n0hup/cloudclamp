@@ -9,81 +9,53 @@ open FSharpPlus
 
 module AwsRoute53Resource =
 
+  // type ResourceRecordType =
+  //   A | AAAA | CNAME | DNSKEY | MX | NS | PTR | RRSIG | SOA | TXT
 
-  type AliasTarget =
-    {
-      DNSName               : string
-      EvaluateTargetHealth  : bool
-      HostedZoneId          : string
-    }
-    static member ToJson (a: AliasTarget) =
-        jobj [
-            "DNSName"               .= a.DNSName
-            "EvaluateTargetHealth"  .= a.EvaluateTargetHealth
-            "HostedZoneId"          .= a.HostedZoneId
-        ]
-    static member OfJson json =
-        match json with
-        | JObject o ->
-            monad {
-                let! dnsName              = o .@ "DNSName"
-                let! evaluateTargetHealth = o .@ "EvaluateTargetHealth"
-                let! hostedZoneId         = o .@ "HostedZoneId"
-                return {
-                    DNSName = dnsName
-                    EvaluateTargetHealth = evaluateTargetHealth
-                    HostedZoneId = hostedZoneId
-                }
-            }
-        | x -> Decode.Fail.objExpected x
+  type AliasTarget = {
+    DNSName               : string
+    EvaluateTargetHealth  : bool
+    HostedZoneId          : string
+  }
+  with
+    static member JsonObjCodec =
+      fun d e h -> { DNSName = d; EvaluateTargetHealth = e; HostedZoneId = h }
+      |> withFields
+      |> jfield    "DNSName"                (fun d -> d.DNSName)
+      |> jfield    "EvaluateTargetHealth"   (fun e -> e.EvaluateTargetHealth)
+      |> jfield    "HostedZoneId"           (fun h -> h.HostedZoneId)
 
-  let aliasTargetToJSON (a:AliasTarget) : string =
-    sprintf "%s" (string (toJson a))
+  type ResourceRecord =
+    { Value : string }
+    with
+      static member JsonObjCodec =
+        fun r -> { Value = r }
+        |> withFields
+        |> jfield "Value" (fun r -> r.Value)
 
-  type ResourceRecordType =
-      A | AAAA | CNAME | DNSKEY | MX | NS | PTR | RRSIG | SOA | TXT
+  type ResourceRecords =
+    List<ResourceRecord>
 
-  let resourceRecordTypeDecoder s  =
-    match s with
-      | JString "A"       -> Decode.Success A
-      | JString "AAAA"    -> Decode.Success AAAA
-      | JString "CNAME"   -> Decode.Success CNAME
-      | JString "DNSKEY"  -> Decode.Success DNSKEY
-      | JString "MX"      -> Decode.Success MX
-      | JString "NS"      -> Decode.Success NS
-      | JString "PTR"     -> Decode.Success PTR
-      | JString "RRSIG"   -> Decode.Success RRSIG
-      | JString "SOA"     -> Decode.Success SOA
-      | JString "TXT"     -> Decode.Success TXT
-      | JString  x as v   -> Decode.Fail.invalidValue v ("Wrong ResourceRecordType: " + x)
-      | x                 -> Decode.Fail.strExpected  x
-
-  let resourceRecordTypeEncoder r =
-    match r with
-      | A       -> JString "A"
-      | AAAA    -> JString "AAAA"
-      | CNAME   -> JString "CNAME"
-      | DNSKEY  -> JString "DNSKEY"
-      | MX      -> JString "MX"
-      | NS      -> JString "NS"
-      | PTR     -> JString "PTR"
-      | RRSIG   -> JString "RRSIG"
-      | SOA     -> JString "SOA"
-      | TXT     -> JString "TXT"
-
-  let resourceRecordTypeCodec =
-    resourceRecordTypeDecoder, resourceRecordTypeEncoder
+  type ResourceRecordsOrAlias =
+    | AliasTarget of
+        AliasTarget
+    | ResourceRecords of
+        ResourceRecords
+    with
+      static member JsonObjCodec =
+        (
+          ( AliasTarget     <!> jreq "AliasTarget"      (function AliasTarget a     -> Some a | _ -> None) )
+        <|>
+          ( ResourceRecords <!> jreq "ResourceRecords"  (function ResourceRecords r -> Some r | _ -> None) )
+        )
 
   type ResourceRecordSet =
-    | Alias of
-        Name : string *
-        Type : ResourceRecordType *
-        AliasTarget : AliasTarget
-    | Record of
-        Name : string *
-        Type : ResourceRecordType *
-        ResourceRecords : List<string> *
-        TTL : uint32
+    {
+      Name            : string
+      RecordsOrAlias  : ResourceRecordsOrAlias
+      TTL             : Option<uint32>
+      Type            : string
+    }
 
   type DnsResource = {
     Name               : string
@@ -91,19 +63,46 @@ module AwsRoute53Resource =
     ResourceRecordSets : List<ResourceRecordSet>
   }
 
+  type Color = Red | Blue | White
+
+  type Car = {
+      Id    : string
+      Color : Color
+      Kms   : int }
+
+  let colorDecoder = function
+      | JString "red"   -> Decode.Success Red
+      | JString "blue"  -> Decode.Success Blue
+      | JString "white" -> Decode.Success White
+      | JString  x as v -> Decode.Fail.invalidValue v ("Wrong color: " + x)
+      | x               -> Decode.Fail.strExpected  x
+
+  let colorEncoder = function
+      | Red   -> JString "red"
+      | Blue  -> JString "blue"
+      | White -> JString "white"
+
+  let colorCodec = colorDecoder, colorEncoder
+
+  let [<GeneralizableValue>]carCodec<'t> =
+      fun i c k -> { Id = i; Color = c; Kms = k }
+      |> withFields
+      |> jfieldWith JsonCodec.string "id"    (fun x -> x.Id)
+      |> jfieldWith colorCodec       "color" (fun x -> x.Color)
+      |> jfieldWith JsonCodec.int    "kms"   (fun x -> x.Kms)
+      |> Codec.compose jsonObjToValueCodec
+
   //
   // Helpers
   //
 
-  let rrTypeToString (rrType:ResourceRecordType) : string =
-    match rrType with
-      | A         -> "A"
-      | AAAA      -> "AAAA"
-      | CNAME     -> "CNAME"
-      | DNSKEY    -> "DNSKEY"
-      | MX        -> "MX"
-      | NS        -> "NS"
-      | PTR       -> "PTR"
-      | RRSIG     -> "RRSIG"
-      | SOA       -> "SOA"
-      | TXT       -> "TXT"
+
+
+  let validResourceRecordType s =
+      match s with
+        | "A" | "AAAA" | "CNAME" | "DNSKEY"
+        | "MX" | "NS"  | "PTR" | "RRSIG"
+        | "SOA" | "TXT" ->
+          Ok s
+        | _ ->
+          Error "not supported ResouceRecord Type"
