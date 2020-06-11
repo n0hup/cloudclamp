@@ -24,6 +24,8 @@
 
     <!-- Aws.Route53 -->
     <Compile Include="Aws\AwsRoute53Resource.fs"  />
+    <Compile Include="Aws\AwsRoute53Dto.fs"  />
+
 
     <!-- Aws.Acm -->
     <Compile Include="Aws\AwsAcmResource.fs"  />
@@ -45,6 +47,9 @@
     <PackageReference Include="AWSSDK.Route53"        Version="3.5.0-beta"  />
     <PackageReference Include="FSharp.Data"           Version="3.3.3"       />
     <PackageReference Include="Fleece.SystemTextJson" Version="0.8.0"       />
+
+    <PackageReference Include="YamlDotNet"            Version="8.1.2" />
+
   </ItemGroup>
 
 </Project>

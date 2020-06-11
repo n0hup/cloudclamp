@@ -28,7 +28,9 @@ module AwsAcmResource =
     ValidationStatus: ValidationStatus
   }
 
-  type ExtendedKeyUsageName = TlsWebServerAuthentication | TlsWebClientAuthentication
+  type ExtendedKeyUsageName =
+    | TlsWebServerAuthentication
+    | TlsWebClientAuthentication
 
   type ExtendedKeyUsage = {
     Name : ExtendedKeyUsageName
@@ -39,7 +41,8 @@ module AwsAcmResource =
     | RSA2048
 
   type KeyUsageName =
-    | DigitalSsignature | KeyEncipherment
+    | DigitalSsignature
+    | KeyEncipherment
 
   type KeyUsage = {
     Name : KeyUsageName
@@ -52,13 +55,15 @@ module AwsAcmResource =
   type RenewalEligibility =
     | ELIGIBLE
 
-  type SignatureAlgorithm = | SHA256WITHRSA
+  type SignatureAlgorithm =
+    | SHA256WITHRSA
 
-  type Status = | Issued
+  type Status =
+    | Issued
 
   type Type = AmazonIssued
 
-    type CertificateResource = {
+  type CertificateResource = {
     CertificateArn            : string
     CreatedAt                 : string
     DomainName                : string

@@ -15,65 +15,44 @@ module AwsRoute53Resource =
       EvaluateTargetHealth  : bool
       HostedZoneId          : string
     }
-    with
-      static member JsonObjCodec =
-        fun d e h -> { DNSName = d; EvaluateTargetHealth = e; HostedZoneId = h }
-        |> withFields
-        |> jfield    "DNSName"                (fun d -> d.DNSName)
-        |> jfield    "EvaluateTargetHealth"   (fun e -> e.EvaluateTargetHealth)
-        |> jfield    "HostedZoneId"           (fun h -> h.HostedZoneId)
 
-  type ResourceRecord =
-    {
-      Value : string
-    }
-    with
-      static member JsonObjCodec =
-        fun r -> { Value = r }
-        |> withFields
-        |> jfield "Value" (fun r -> r.Value)
+  type ResourceRecordType =
+    A | AAAA | CNAME | DNSKEY | MX | NS | PTR | RRSIG | SOA | TXT
 
-  type ResourceRecords =
-    List<ResourceRecord>
 
-  type ResourceRecordsOrAlias =
-    | AliasTarget of
-        AliasTarget
-    | ResourceRecords of
-        ResourceRecords
-    with
-      static member JsonObjCodec =
-        (
-          ( AliasTarget     <!> jreq "AliasTarget"      (function AliasTarget a     -> Some a | _ -> None) )
-        <|>
-          ( ResourceRecords <!> jreq "ResourceRecords"  (function ResourceRecords r -> Some r | _ -> None) )
-        )
+  // type Alias =
+  //   {
+  //       Name            : string
+  //       Type            : ResourceRecordType
+  //       AliasTarget     : AliasTarget
+  //   }
 
-  let jfrom c f =
-    Codec.compose (Codec.ofConcrete c) (Ok, f) |> Codec.toConcrete
+  // type Record =
+  //   {
+  //       Name            : string
+  //       Type            : ResourceRecordType
+  //       ResourceRecords : List<string>
+  //       TTL             : uint32
+  //   }
+
+  // type ResourceRecordSet2 =
+  //   | Alias of Alias
+  //   | Record of Record
+
 
   type ResourceRecordSet =
-    {
-      Name            : string
-      RecordsOrAlias  : ResourceRecordsOrAlias
-      TTL             : Option<uint32>
-      Type            : string
-    }
-    static member JsonObjCodec =
-      fun n r tt ty -> { Name = n; RecordsOrAlias = r; TTL =tt; Type = ty}
-      <!> jreq "Name"                               (fun n  -> Some n.Name)
-      <*> jfrom ResourceRecordsOrAlias.JsonObjCodec (fun r  -> r.RecordsOrAlias)
-      <*> jopt "TTL"                                (fun tt -> tt.TTL)
-      <*> jreq "Type"                               (fun ty -> Some ty.Type)
+    | Alias of
+        Name            : string *
+        Type            : ResourceRecordType *
+        AliasTarget     : AliasTarget
+    | Record of
+        Name            : string *
+        Type            : ResourceRecordType *
+        ResourceRecords : List<string> *
+        TTL             : uint32
 
-  type DnsResource =
-    {
-      Name               : string
-      HostedZoneId       : Option<string>
-      ResourceRecordSets : List<ResourceRecordSet>
-    }
-    static member JsonObjCodec =
-      fun n h r -> { Name = n; HostedZoneId = h; ResourceRecordSets = r}
-      <!> jreq "Name"               (fun n  -> Some n.Name)
-      <*> jopt "HostedZoneId"       (fun h  -> h.HostedZoneId)
-      <*> jreq "ResourceRecordSets" (fun r  -> Some r.ResourceRecordSets)
+  type DnsResource = {
+    Name               : string
+    HostedZoneId       : Option<string>
+    ResourceRecordSets : List<ResourceRecordSet>
+  }
