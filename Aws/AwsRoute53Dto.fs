@@ -51,31 +51,63 @@ module AwsRoute53Dto =
         let e = aliasTarget.EvaluateTargetHealth
         let h = aliasTarget.HostedZoneId
         {DNSName = d; EvaluateTargetHealth = e; HostedZoneId = h}
-      static member ToDomain (dto: AliasTargetDto) : Result<AwsRoute53Resource.AliasTarget, string> =
-        Ok {DNSName = dto.DNSName; EvaluateTargetHealth = dto.EvaluateTargetHealth; HostedZoneId = dto.HostedZoneId}
-
-  type ResourceRecordTypeDto =
-    string
+      static member ToDomain (dto: AliasTargetDto) : AwsRoute53Resource.AliasTarget =
+        { DNSName               = dto.DNSName
+          EvaluateTargetHealth  = dto.EvaluateTargetHealth
+          HostedZoneId          = dto.HostedZoneId }
 
   type AliasDto =
     {
       Name            : string
-      Type            : ResourceRecordTypeDto
+      Type            : string
       AliasTarget     : AliasTargetDto
     }
+    with
+      static member FromDomain (alias: AwsRoute53Resource.Alias) : AliasDto =
+        let n = alias.Name
+        let t = alias.Type
+        let a = alias.AliasTarget
+        {Name = n; Type = t.ToString(); AliasTarget = (AliasTargetDto.FromDomain a)}
+      static member ToDomain (dto: AliasDto) : AwsRoute53Resource.Alias =
+        { Name        = dto.Name
+          Type        = (AwsRoute53Resource.fromStringToResourceRecordType dto.Type)
+          AliasTarget = (AliasTargetDto.ToDomain dto.AliasTarget) }
 
   type RecordDto =
     {
-        Name            : string
-        Type            : ResourceRecordTypeDto
-        ResourceRecords : List<string>
-        TTL             : uint32
+      Name            : string
+      Type            : string
+      ResourceRecords : List<string>
+      TTL             : uint32
     }
+    with
+      static member FromDomain (record: AwsRoute53Resource.Record) : RecordDto =
+        let n   = record.Name
+        let t   = record.Type
+        let r   = record.ResourceRecords
+        let ttl = record.TTL
+        {Name = n; Type = t.ToString(); ResourceRecords = r; TTL = ttl}
+      static member ToDomain (dto: RecordDto) : AwsRoute53Resource.Record =
+        { Name            = dto.Name
+          Type            = (AwsRoute53Resource.fromStringToResourceRecordType dto.Type)
+          ResourceRecords = dto.ResourceRecords
+          TTL             = dto.TTL }
 
   type ResourceRecordSetDto =
     {
-      Tag: string
-      AliasData: AliasDto
-      RecordData: RecordDto
+      Tag         : string
+      AliasData   : AliasDto
+      RecordData  : RecordDto
     }
-
+    with
+      static member FromDomain (rrset: AwsRoute53Resource.ResourceRecordSet) : ResourceRecordSetDto =
+        let nullAliasData   = Unchecked.defaultof<AliasDto>
+        let nullRecordData  = Unchecked.defaultof<RecordDto>
+        match rrset with
+          | AwsRoute53Resource.ResourceRecordSet.Alias  a -> {Tag="AliasTarget";     AliasData=nullAliasData; RecordData = nullRecordData}
+          | AwsRoute53Resource.ResourceRecordSet.Record r -> {Tag="ResourceRecords"; AliasData=nullAliasData; RecordData = nullRecordData}
+      static member ToDomain (dto: ResourceRecordSetDto) : AwsRoute53Resource.ResourceRecordSet =
+        match dto.Tag with
+          | "AliasTarget"     -> AwsRoute53Resource.ResourceRecordSet.Alias(AliasDto.ToDomain dto.AliasData)
+          | "ResourceRecords" -> AwsRoute53Resource.ResourceRecordSet.Record(RecordDto.ToDomain dto.RecordData)
+          | x                 -> failwith (sprintf "%A is not supported" x)

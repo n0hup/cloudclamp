@@ -19,37 +19,41 @@ module AwsRoute53Resource =
   type ResourceRecordType =
     A | AAAA | CNAME | DNSKEY | MX | NS | PTR | RRSIG | SOA | TXT
 
+  let fromStringToResourceRecordType =
+    function
+      | "A"       -> A
+      | "AAAA"    -> AAAA
+      | "CNAME"   -> CNAME
+      | "DNSKEY"  -> DNSKEY
+      | "MX"      -> MX
+      | "NS"      -> NS
+      | "PTR"     -> PTR
+      | "RRSIG"   -> RRSIG
+      | "SOA"     -> SOA
+      | "TXT"     -> TXT
+      | x         -> failwith (sprintf "ResourceRecordType not found: %s" x)
 
-  // type Alias =
-  //   {
-  //       Name            : string
-  //       Type            : ResourceRecordType
-  //       AliasTarget     : AliasTarget
-  //   }
 
-  // type Record =
-  //   {
-  //       Name            : string
-  //       Type            : ResourceRecordType
-  //       ResourceRecords : List<string>
-  //       TTL             : uint32
-  //   }
+  type Alias =
+    {
+      Name            : string
+      Type            : ResourceRecordType
+      AliasTarget     : AliasTarget
+    }
 
-  // type ResourceRecordSet2 =
-  //   | Alias of Alias
-  //   | Record of Record
-
+  type Record =
+    {
+      Name            : string
+      Type            : ResourceRecordType
+      ResourceRecords : List<string>
+      TTL             : uint32
+    }
 
   type ResourceRecordSet =
     | Alias of
-        Name            : string *
-        Type            : ResourceRecordType *
-        AliasTarget     : AliasTarget
+        Alias
     | Record of
-        Name            : string *
-        Type            : ResourceRecordType *
-        ResourceRecords : List<string> *
-        TTL             : uint32
+        Record
 
   type DnsResource = {
     Name               : string
