@@ -104,10 +104,52 @@ module AwsRoute53Dto =
         let nullAliasData   = Unchecked.defaultof<AliasDto>
         let nullRecordData  = Unchecked.defaultof<RecordDto>
         match rrset with
-          | AwsRoute53Resource.ResourceRecordSet.Alias  a -> {Tag="AliasTarget";     AliasData=nullAliasData; RecordData = nullRecordData}
-          | AwsRoute53Resource.ResourceRecordSet.Record r -> {Tag="ResourceRecords"; AliasData=nullAliasData; RecordData = nullRecordData}
+          | AwsRoute53Resource.ResourceRecordSet.Alias  a ->
+              {Tag="AliasTarget";     AliasData=(AliasDto.FromDomain a); RecordData = nullRecordData}
+          | AwsRoute53Resource.ResourceRecordSet.Record r ->
+              {Tag="ResourceRecords"; AliasData=nullAliasData; RecordData = (RecordDto.FromDomain r)}
       static member ToDomain (dto: ResourceRecordSetDto) : AwsRoute53Resource.ResourceRecordSet =
         match dto.Tag with
           | "AliasTarget"     -> AwsRoute53Resource.ResourceRecordSet.Alias(AliasDto.ToDomain dto.AliasData)
           | "ResourceRecords" -> AwsRoute53Resource.ResourceRecordSet.Record(RecordDto.ToDomain dto.RecordData)
           | x                 -> failwith (sprintf "%A is not supported" x)
+
+  type DnsResourceDto =
+    {
+      Name               : string
+      HostedZoneId       : string
+      ResourceRecordSets : List<ResourceRecordSetDto>
+    }
+    with
+
+      static member FromDomain (dnr : AwsRoute53Resource.DnsResource) : DnsResourceDto =
+        let n   = dnr.Name
+        let h   = dnr.HostedZoneId
+        let r   = dnr.ResourceRecordSets
+        match dnr.HostedZoneId with
+        | Some x ->
+          {Name = n; HostedZoneId = x; ResourceRecordSets = (List.map ResourceRecordSetDto.FromDomain r)}
+        | None ->
+          {Name = n; HostedZoneId = null; ResourceRecordSets = (List.map ResourceRecordSetDto.FromDomain r)}
+
+      static member ToDomain (dto : DnsResourceDto) : AwsRoute53Resource.DnsResource =
+        match dto.HostedZoneId with
+        | null ->
+          { Name                = dto.Name
+            HostedZoneId        = None
+            ResourceRecordSets  = (List.map ResourceRecordSetDto.ToDomain dto.ResourceRecordSets) }
+        | x ->
+          { Name                = dto.Name
+            HostedZoneId        = Some x
+            ResourceRecordSets  = (List.map ResourceRecordSetDto.ToDomain dto.ResourceRecordSets) }
+
+      static member ToYaml (dto:DnsResourceDto) : string =
+        let serializer = YamlDotNet.Serialization.Serializer()
+
+        let yaml = serializer.Serialize(dto)
+        yaml
+
+      static member FromYaml (yaml : string) : DnsResourceDto =
+          let deserializer = YamlDotNet.Serialization.Deserializer()
+          let dto = deserializer.Deserialize<DnsResourceDto>(yaml)
+          dto

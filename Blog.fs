@@ -64,7 +64,7 @@ module Blog =
   ]
 
   let dnsResource =
-    { Name = "l1x.be"; HostedZoneId = None; ResourceRecordSets = resourceRecordSets }
+    { Name = "l1x.be"; HostedZoneId = Some "szopki"; ResourceRecordSets = resourceRecordSets }
 
   type Blog =
     {
@@ -79,6 +79,11 @@ module Blog =
   let executeCommand command stage =
     let log = sprintf "command: %s stage: %s" command stage
     loggerBlog.LogInfo log
+
+    let dto = AwsRoute53Dto.DnsResourceDto.FromDomain(dnsResource)
+    let s = AwsRoute53Dto.DnsResourceDto.ToYaml(dto)
+    let y = sprintf "command: %s" s
+    loggerBlog.LogInfo y
 
 
 
