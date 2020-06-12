@@ -39,6 +39,9 @@ module AwsRoute53Dto =
   //     TTL: 300
   //     Type: CNAME
 
+  let loggerAwsRoute53Dto = Logging.Logger.CreateLogger "AwsRoute53Dto" Config.loggingConfig.LogLevel
+
+
   type AliasTargetDto =
     {
       DNSName               : string
@@ -145,7 +148,7 @@ module AwsRoute53Dto =
 
       static member ToYaml (dto:DnsResourceDto) : string =
         let serializer = YamlDotNet.Serialization.Serializer()
-
+        loggerAwsRoute53Dto.LogInfo (sprintf "%A" dto)
         let yaml = serializer.Serialize(dto)
         yaml
 
