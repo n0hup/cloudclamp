@@ -5,8 +5,6 @@ namespace CloudClamp
 open AwsRoute53Resource
 open Logging
 open Config
-open Fleece.SystemTextJson
-
 
 module Blog =
 
@@ -79,11 +77,6 @@ module Blog =
   let executeCommand command stage =
     let log = sprintf "command: %s stage: %s" command stage
     loggerBlog.LogInfo log
-
-    let dto = AwsRoute53Dto.DnsResourceDto.FromDomain(dnsResource)
-    let s = AwsRoute53Dto.DnsResourceDto.ToYaml(dto)
-    let y = sprintf "command: %s" s
-    loggerBlog.LogInfo y
 
 
 

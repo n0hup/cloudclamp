@@ -1,10 +1,7 @@
 namespace CloudClamp
 
 // external
-open System.Text.Json
-open Fleece.SystemTextJson
-open Fleece.SystemTextJson.Operators
-open FSharpPlus
+
 // internal
 
 module AwsRoute53Resource =
